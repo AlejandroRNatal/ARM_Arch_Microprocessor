@@ -47,10 +47,9 @@ module alutest;
 
         #20
         begin
-            
             OP<=4'd7;
-            A<=32'hFFFFFFF0;
-            B<=32'hFFFFFFFF;
+            A<=32'h8;
+            B<=32'h5;
         end
 
 
@@ -58,17 +57,34 @@ module alutest;
 
         begin
             OP <= 4'd4;
-            A<= 32'hFFFF;
-            B<=32'hFFFF;
+            A<= 32'h7FFFFFFF;
+            B<=32'h1;
 
         end
+
+        #30
+        begin  
+            OP<=4'd8;
+            A<=32'h0;
+            B<=32'h0;
+            Ci<=1;
+        end
+
+        #35
+        begin
+            OP <= 4'd9;
+            A<=32'h0;
+            B<=32'h0;
+            Ci<=1;
+        end
+
 
     end
 
     initial begin 
-        $display("  N        V          Z          Co                    A                   B                    Y                    YBin");
-        $monitor("  %b   |    %b    |     %b     |    %b     |     %d    |    %d     |    %d         |     %b      ",N,V,Z,Co,A,B,Y,Y);
-        
+        $display("  N        V          Z          Co                    A                   B                 Cin                              Y                    YBin");
+        $monitor("  %b   |    %b    |     %b     |    %b     |     %d    |    %d            |    %d            |         %d         |    %b      ",N,V,Z,Co,A,B,Ci,Y,Y);
+
     end
 
 
