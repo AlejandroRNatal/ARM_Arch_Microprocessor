@@ -102,7 +102,7 @@ module ram_interact();
 	
     initial begin
 		file_in = $fopen("data.txt","r");
-		address =  7'b0000000;
+		address =  `START_ADDRESS;
 		while (!$feof(file_in)) begin
 			file_status = $fscanf(file_in, "%d", data);
 			ram.storage[address] = data;
@@ -119,11 +119,12 @@ module ram_interact();
 
         for(i =0; i  < 16; i = i+1)
         begin
+         $display("\n\nWrite/Read: %b\nEnable:%b\nMode:%2b\n availability:%b\n", w_r, enable, mode, MOC);   
             #5 enable = 1'b1;
 
             #5 enable = 1'b0;
             address = address + 1;
-            $display("\n\nWrite/Read: %b\nMode:%2b\n availability:%b\n", w_r, mode, MOC);
+           
             if(i == 0)
                 mode <= `BYTE;
             if(i == 2)
