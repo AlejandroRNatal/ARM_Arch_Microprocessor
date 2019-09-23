@@ -18,72 +18,56 @@ module alutest;
     initial begin
         
         #5
-        A <= 32'hFFFFFFF0;
-        B <= 32'hF;
-
-        OP <= 4'd0;
-
-
-
-        #10
         begin
+            $display("--------------------------------------------------------");
+            $display("---------------Logical Operations-----------------------");
+            $display("--------------------------------------------------------");
+            $display("OPCODE    N        V          Z          Co                    A                   B                 Cin                              Y                    YBin");
+        
+            A <= 32'b0001010100101;
+            B <= 32'b0101001110001;
+            OP <= 4'b0000;
+            repeat (6) #5 OP<= OP+1;
     
-  
-
-            OP <= 4'd4;
-            A<= 32'd10;
-            B<=32'd15;
-
         end
+        
+        #35begin
+            OP<=OP +1;
+            $display("--------------------------------------------------------");
+            $display("---------------Arthmetic Operations No OVFl-------------");
+            $display("--------------------------------------------------------");
+            $display("OPCODE    N        V          Z          Co                    A                   B                 Cin                              Y                    YBin");
+            Ci<=1;
 
-        #15
-
-        begin
-           
-            OP<=4'd7;
-            A<=32'h6;
-            B<=32'h8;
-        end
-
-        #20
-        begin
-            OP<=4'd7;
-            A<=32'h8;
-            B<=32'h5;
+            repeat (3) #5 OP <= OP +1;
         end
 
 
-        #25
-
-        begin
-            OP <= 4'd4;
+        #55begin
+            OP<=4'b0111;
+            $display("--------------------------------------------------------");
+            $display("---------------OVERFLOW---------------------------------");
+            $display("--------------------------------------------------------");
+            $display("OPCODE    N        V          Z          Co                    A                   B                 Cin                              Y                    YBin");
+            
             A<= 32'h7FFFFFFF;
-            B<=32'h1;
-
+            B<= 32'h70000000;
+            repeat (1) #5 OP <= 4'b1001;
         end
 
-        #30
-        begin  
-            OP<=4'd8;
-            A<=32'h0;
-            B<=32'h0;
-            Ci<=1;
-        end
+        #65begin
+            OP<=4'b1000;
+            A<=32'h80000000; //max negative 
+            B<=32'h1; 
 
-        #35
-        begin
-            OP <= 4'd9;
-            A<=32'h0;
-            B<=32'h0;
-            Ci<=1;
+            repeat(1) #5 OP<= 4'b1010;
         end
-
 
     end
 
     initial begin 
-        $display("  N        V          Z          Co                    A                   B                 Cin                              Y                    YBin");
-        $monitor("  %b   |    %b    |     %b     |    %b     |     %d    |    %d            |    %d            |         %d         |    %b      ",N,V,Z,Co,A,B,Ci,Y,Y);
+       // $display("OPCODE    N        V          Z          Co                    A                   B                 Cin                              Y                    YBin");
+       #5$monitor("%b      %b   |    %b    |     %b     |    %b     |     %d    |    %d            |    %d            |         %d         |    %b      ",OP , N,V,Z,Co,A,B,Ci,Y,Y);
 
     end
 
