@@ -1,7 +1,7 @@
 
-module ALU(output reg N, Z, V, Cout,  output reg signed [0:31]O, input Cin , input signed [0:31]A, B , input [0:3]OP);
+module ALU(output reg N, Z, V, Cout,  output reg  [0:31]O, input Cin , input  [0:31]A, B , input [0:3]OP);
 
-  reg pre_sign , keep_sgn_on_ovfl ,set_ovfl;
+  reg og_sign , shouldbe_sign ,ovfl_sign;
 
   always @* 
   begin 
@@ -51,9 +51,13 @@ module ALU(output reg N, Z, V, Cout,  output reg signed [0:31]O, input Cin , inp
     
     4'd8: //sum with carry
     begin
-      {Cout , O} <= Cin + A + B;
+     {Cout , O} <=  (Cin == 1) ? (A + B + 1):(A+B); 
     end
 
+    4'd9:
+    begin //sub over carry 
+      {Cout , O} <= (Cin == 1) ? ({1'b0,A} - {1'b0,B} - {32'h1}) : ({1'b0,A} - {1'b0,B});
+    end
     
 
 
@@ -67,18 +71,18 @@ module ALU(output reg N, Z, V, Cout,  output reg signed [0:31]O, input Cin , inp
 
 
   begin
-      pre_sign <= (A[31]);
-      keep_sgn_on_ovfl<=
-          (((OP==4'd7)&&(A[31] != B[31]))//SUB&CMP
-          ||((OP==4'd4)&&(A[31] == B[31]))); // ADD
-          
-      set_ovfl<=(((OP==4'd7)&&(A[0] != B[0]))//SUB&CMP
-          ||((OP==4'd4)&&(A[0] == B[0])) );
+      og_sign <= (A[0]);
       
+      shouldbe_sign<=
+          (((OP==4'd7 || OP == 4'd9)&&(A[0] != B[0]))//if a sub between different signs 
+          ||((OP==4'd4 || OP==4'd8)&&(A[0] == B[0]))); // if sum and both signs are the same 
+          
+      ovfl_sign<=(((OP==4'd7 || OP == 4'd9)&&(A[0] != B[0]))
+          ||((OP==4'd4 ||OP ==4'd8)&&(A[0] == B[0])) );
   end
 
-  N = O[31] ^ ((keep_sgn_on_ovfl)&&(pre_sign != O[31]));
-  V = (set_ovfl)&&(pre_sign != O[0]);
+  N = O[0] ^ ((shouldbe_sign)&&(og_sign != O[0]));
+  V = (ovfl_sign)&&(og_sign != O[0]);
 end
 
 endmodule

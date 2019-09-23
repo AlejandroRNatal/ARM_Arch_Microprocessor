@@ -68,6 +68,7 @@ module alutest;
     initial begin 
         $display("  N        V          Z          Co                    A                   B                    Y                    YBin");
         $monitor("  %b   |    %b    |     %b     |    %b     |     %d    |    %d     |    %d         |     %b      ",N,V,Z,Co,A,B,Y,Y);
+        
     end
 
 
