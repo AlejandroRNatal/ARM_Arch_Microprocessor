@@ -46,7 +46,7 @@ module ALU(output reg N, Z, V, Cout,  output reg  [0:31]O, input Cin , input  [0
     //Arithmetic OPs
     4'b0111: //Sum 
       begin
-         {Cout ,O }  <= A  +  B ; 
+         {Cout , O }  <= A  +  B ; 
       end
 
     4'b1000: //SUB CMP
@@ -71,22 +71,22 @@ module ALU(output reg N, Z, V, Cout,  output reg  [0:31]O, input Cin , input  [0
 
   Z = ( O == 32'b0) ? 1:0;
   
-  // N = (O[0] === 1'b1)? 1:0;
+  N = (O[0] === 1'b1)? 1:0;
 
 
 
   begin
       og_sign <= (A[0]);
       
-      shouldbe_sign<=
-          (((OP==4'b1010 || OP == 4'b1000)&&(A[0] != B[0]))//if a sub between different signs 
-          ||((OP==4'b1001 || OP==4'b0111)&&(A[0] == B[0]))); // if sum and both signs are the same 
+      // shouldbe_sign<=
+      //     (((OP==4'b1010 || OP == 4'b1000)&&(A[0] != B[0]))//if a sub between different signs 
+      //     ||((OP==4'b1001 || OP==4'b0111)&&(A[0] == B[0]))); // if sum and both signs are the same 
           
       ovfl_sign<=(((OP==4'b1010 || OP == 4'b1000)&&(A[0] != B[0]))
           ||((OP==4'b1001 || OP==4'b0111)&&(A[0] == B[0])) );
   end
 
-  N = O[0] ^ ((shouldbe_sign)&&(og_sign != O[0]));
+ // N = O[0] ^ ((shouldbe_sign)&&(og_sign != O[0]));
   V = (ovfl_sign)&&(og_sign != O[0]);
 end
 
