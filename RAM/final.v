@@ -2,20 +2,24 @@
 `define BYTE 2'b00
 `define WORD 2'b10
 `define HALFWORD 2'b01
-`define START_ADDRESS 7'b0000000
+`define START_ADDRESS 8'b00000000
 
 
-module ram_256_b(input [31:0]data, input [6:0]address,
+module ram_256_b(input [31:0]data, input [7:0]address,
                  input w_r, input enable, input [1:0] access_mode,
                  output reg state, output reg[31:0] mem);
     reg [31:0] storage[0:255]; 
 
     integer fo, file_descriptor;
+
     always @(posedge enable, w_r)
+
         begin
         state =1'b0;
+
             if (enable)//High -> we are being requested
                 begin
+
                     if(w_r)//HIGH -> read mode
                         case(access_mode)
                             `BYTE://byte
@@ -44,14 +48,18 @@ module ram_256_b(input [31:0]data, input [6:0]address,
 
 			//last case is don't care
                         endcase
+
                     else //write mode
+
                         case(access_mode)
+
                             // Byte
                             `BYTE:
                             begin
 				                 storage[address] = data[7:0];
                                  state = 1'b1;
                                  end
+
                             // Halfword
                             `HALFWORD:
                                 begin
@@ -59,6 +67,7 @@ module ram_256_b(input [31:0]data, input [6:0]address,
                                     storage[address + 1] = data[7:0];
                                     state = 1'b1;
                                 end
+
                             // Word
                             `WORD:
                                 begin
@@ -68,11 +77,14 @@ module ram_256_b(input [31:0]data, input [6:0]address,
                                     storage[address+3] = data[7:0];
                                     state = 1'b1;
                                 end
+
                             default: begin
 				                 storage[address] = data[7:0];
                                  state = 1'b1;
                             end
+
                         endcase
+
                     state =1'b1;
                 end
             else
@@ -93,7 +105,7 @@ module ram_interact();
     reg [31:0] data;
 	reg enable, w_r;
     reg [31:0] data_in;
-	reg [6:0] address;
+	reg [7:0] address;
     reg[1:0] mode;
     wire [31:0] data_output;
 	wire MOC;
