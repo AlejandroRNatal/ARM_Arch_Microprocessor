@@ -1,4 +1,8 @@
 
+
+
+
+
 module ControlUnit(output[2:0]State, output CM1, CM0,SM1, SM0,
                     Ld, First, Last, input Done, Reset, Clk);
 
@@ -13,18 +17,18 @@ endmodule
 module NextStateDecoder(output reg [2:0] NextState,
                          input[2:0] State, input Done);
 
-always@(State, Done)
+    always@(State, Done)
 
-case(State)
-    3'b000: NextState = 3'b001;
-    3'b001: NextState = 3'b010;
-    3'b010: NextState = 3'b011;
-    3'b011: if(Done) NextState = 3'b100;
-            else NextState = 3'b011;
-    3'b100: NextState = 3'b000;
-    default: NextState = 3'b000;
+    case(State)
+        3'b000: NextState = 3'b001;
+        3'b001: NextState = 3'b010;
+        3'b010: NextState = 3'b011;
+        3'b011: if(Done) NextState = 3'b100;
+                else NextState = 3'b011;
+        3'b100: NextState = 3'b000;
+        default: NextState = 3'b000;
 
-endcase
+    endcase
 
 endmodule
 
@@ -32,65 +36,78 @@ endmodule
 module ControlSignalsEncoder( output reg CM1, CM0, SM1, SM0, Ld, First, Last,
         input [2:0]State, input Done);
 
-always@(State, Done)
+    always@(State, Done)
 
-case(State)
-    3'b000: begin
-                CM1 = 1;
-                CM0 = 1;
-                Ld = 0;
-                SM1 <=0;
-                SM0 = 0;
+    case(State)
+        3'b000: begin
+                    CM1 = 1;
+                    CM0 = 1;
+                    Ld = 0;
+                    SM1 <=0;
+                    SM0 = 0;
 
-                First = 0;
-                Last = 0;
-            end
-    3'b001: begin
-                CM1 = 0;
-                CM0 = 0;
-                Ld = 1;
-                SM1 =1;
-                SM0 = 0;
-            end
-    3'b010: begin
-                CM0 = 0;
-                CM1 = 1;
-                SM1 =0;
-                SM0 = 1;
+                    First = 0;
+                    Last = 0;
+                end
 
-                First = 1;
-            end
-    3'b011: begin
-                First = 0;
-                if(Done) Last = 1;
-            end
-    3'b100: begin
-                CM1= 0;
-                SM0 = 0;
-                Last = 0;
-            end
-    default: begin
-                CM1 = 0;
-                CM0 = 0
-                SM1=0;
-                SM0 =0;
-                Ld=1;
-                First = 0;
-                Last = 0;
-             end
-endcase 
+        3'b001: begin
+                    CM1 = 0;
+                    CM0 = 0;
+                    Ld = 1;
+                    SM1 =1;
+                    SM0 = 0;
+                end
+
+        3'b010: begin
+                    CM0 = 0;
+                    CM1 = 1;
+                    SM1 =0;
+                    SM0 = 1;
+
+                    First = 1;
+                end
+
+        3'b011: begin
+                    First = 0;
+                    if(Done) Last = 1;
+                end
+
+        3'b100: begin
+                    CM1= 0;
+                    SM0 = 0;
+                    Last = 0;
+                end
+
+        default:
+                begin
+                    CM1 = 0;
+                    CM0 = 0
+                    SM1=0;
+                    SM0 =0;
+                    Ld=1;
+                    First = 0;
+                    Last = 0;
+                end
+    endcase
+
 endmodule
 
 module StateReg(output reg[2:0]State,
-                 input[2:0] NextState, input Clr, Clk);
+                input[2:0] NextState,
+                          input Clr, Clk);
 
     always @(posedge Clk, negedge Clr)
 
-    if(!Clr)State <= 3'b000;
-    else State <= NextState;
+    if(!Clr)
+       State <= 3'b000;
+
+    else
+       State <= NextState;
+    
 endmodule
 
 module CU_tester;
+
     reg Done, Reset, Clk;
     wire[2:0] State;
     wire CM0, CM1, SM1, SM0, Ld, First, Last;
@@ -119,7 +136,6 @@ module CU_tester;
             $display("State CM1 CM0 SM1 SM0 Ld First Last Done Reset     Time");
             $monitor("%d  %b %b %b %b %b %b %b %b %b %d",
                     State, CM1, CM0, SM1, SM0, Ld, First, Last, Done, Reset, $time);
-
         end
 
 endmodule
