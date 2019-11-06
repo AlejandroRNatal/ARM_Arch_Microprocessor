@@ -1562,37 +1562,54 @@ endmodule
 
 module CU_tester;
 
-    wire N, Z, V , Cout;
-    wire[31:0] O;
 
-<<<<<<< HEAD
-    regfile reg_file(C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15, C16, //Port C
-                decinput, A1, B2, // inputs
-                LD, Clrr, Clkk, // senales
-                A, B);
-    ALU_ alu(output reg N, Z, V, Cout,  output reg  [31:0]O, input Cin , input  [31:0]A, B , input [4:0]OP);
-    
-=======
-    regfile reg_file(input [31:0] D1, 
-    input [3:0] decin, input [3:0] sel1, input [3:0] sel2,
-    input LDEC, Clrreg, Clkreg, 
-    output [31:0] regout1, output [31:0] regout2);
-    ALU alu(output reg N, Z, V, Cout,  output reg  [0:31]O, input Cin , input  [0:31]A, B , input [0:3]OP);
->>>>>>> 6e0f5e0a2a20ea1e7d0dcd7bcb3aafb3db735386
-
-    reg Done, Reset, Clk, Cond, Moc;
+    reg Done, Reset, Clk, Cond, Moc, RF_Ld;
 	
     wire[5:0] State;
     wire FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_1,MB_0,MC_1,MC_0,MD, ME, OP4,OP3,OP2,OP1,OP0;
 
+    wire N, Z, V , Cout;
+    wire[31:0] O;
+    reg[0:31] A;
+    reg[0:31] B;
+    reg[0:3] OP;
+    reg Cin;
+
+    reg [31:0]PC;
+    reg [3:0] A;
+    reg [3:0] B;
+
+    wire [31:0]PA;
+    wire [31:0]PB;
+
+    reg [3:0] IR_16_19;
+    reg [3:0] IR_15_12;
+    reg[3:0] all_on = 4b'1111;
+    reg[3:0] dont_care = 4b'0000;
+
+    regfile reg_file(PC, 
+                        C,A,B,
+                        RF_Ld, Reset, Clk, 
+                        PA, PB);
+
+    ALU alu( N, Z, V, Cout, O, Cin ,PA, B , OP);
+
+
+
     ControlUnit CU (State, FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_1,MB_0,MC_1,MC_0,MD, ME, OP4,OP3,OP2,OP1,OP0, Moc, Cond, Done, Reset, Clk);
     
+
+
+    mux muxA(IR_16_19, IR_15_12, all_on, dont_care, MA1, MA0, A);
+    mux muxB(PB, O, Qs_MDR, dont_care, MB1, MB0, B);
     initial #100 $finish;
 
     initial begin
+        State = 6'b000000;
         Clk = 1'b0;
         Cond =1'b0;
         Moc = 1'b0;
+        repeat(100) #5 State += 6'b000001;
         repeat(100) #5 Clk = ~Clk;
         repeat(100) #5 Moc = ~Moc;
         repeat(100) #5 Cond = ~Cond;
@@ -1612,6 +1629,9 @@ module CU_tester;
         initial begin
             $display("===Control-Unit===\n");
             $display("State FR RF IR MDR MAR R_W MOV MA_1 MA_0 MB_1 MB_0 MC_1 MC_0 MD ME OP4 OP3 OP2 OP1 OP0 Moc, Cond Done Reset     Time");
+            $monitor("%d  %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %d",
+                    State, FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_1,MB_0,MC_1,MC_0,MD, ME, OP4,OP3,OP2,OP1,OP0, Moc, Cond, Done, Reset, $time);
+            $display("=== Ouput===\n");
             $monitor("%d  %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %d",
                     State, FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_1,MB_0,MC_1,MC_0,MD, ME, OP4,OP3,OP2,OP1,OP0, Moc, Cond, Done, Reset, $time);
         end
