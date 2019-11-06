@@ -57,7 +57,8 @@
 `define MOV 6'b101101
 `define CMP 6'b101110
 
-module ControlUnit(output[2:0]State, output FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_1,MB_0,MC_1,MC_0,MD, ME, OP4,OP3,OP2,OP1,OP0, input Moc, Cond, Done, Reset, Clk);
+module ControlUnit(output[2:0]State, output FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_1,MB_0,MC_1,MC_0,MD, ME, OP4,OP3,OP2,OP1,OP0,
+                     input Moc, Cond, Done, Reset, Clk);
 
 wire[5:0] NextState;
 //reg Cond, Moc;//This might be wrong
@@ -1616,6 +1617,6 @@ module CU_tester;
         end
     
 
-    
+
 
 endmodule
