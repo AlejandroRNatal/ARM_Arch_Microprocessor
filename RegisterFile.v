@@ -196,7 +196,6 @@ module regfiletest;
                   LD, Clrr, Clkk, // senales
                   A, B); // Port A y Port B
 
-
   initial begin
       C1 = 32'h0000000B;
   end
@@ -205,7 +204,7 @@ module regfiletest;
 
   initial begin
   decinput = 4'h8;
-    #10 C1 <= 32'h00000010;
+    #010 C1 <= 32'h00000010;
     #100 C1 <= 32'h00000020;
   end
 
