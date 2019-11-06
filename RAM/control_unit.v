@@ -1558,17 +1558,26 @@ module StateReg(output reg[5:0]State,
     
 endmodule
 
+
 module CU_tester;
 
     wire N, Z, V , Cout;
     wire[31:0] O;
 
+<<<<<<< HEAD
     regfile reg_file(C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15, C16, //Port C
                 decinput, A1, B2, // inputs
                 LD, Clrr, Clkk, // senales
                 A, B);
     ALU_ alu(output reg N, Z, V, Cout,  output reg  [31:0]O, input Cin , input  [31:0]A, B , input [4:0]OP);
     
+=======
+    regfile reg_file(input [31:0] D1, 
+    input [3:0] decin, input [3:0] sel1, input [3:0] sel2,
+    input LDEC, Clrreg, Clkreg, 
+    output [31:0] regout1, output [31:0] regout2);
+    ALU alu(output reg N, Z, V, Cout,  output reg  [0:31]O, input Cin , input  [0:31]A, B , input [0:3]OP);
+>>>>>>> 6e0f5e0a2a20ea1e7d0dcd7bcb3aafb3db735386
 
     reg Done, Reset, Clk, Cond, Moc;
 	
@@ -1605,18 +1614,8 @@ module CU_tester;
             $monitor("%d  %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %d",
                     State, FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_1,MB_0,MC_1,MC_0,MD, ME, OP4,OP3,OP2,OP1,OP0, Moc, Cond, Done, Reset, $time);
         end
+    
 
-
-
-
-
-
-
-
-
-
-
-
-
+    
 
 endmodule
