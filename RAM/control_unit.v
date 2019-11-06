@@ -56,9 +56,9 @@ module ControlUnit(output[2:0]State, output CM1, CM0,SM1, SM0,
                     Ld, First, Last, input Done, Reset, Clk);
 
 wire[2:0] NextState;
-reg Cond;//This might be wrong
+reg Cond, Moc;//This might be wrong
 
-NextStateDecoder NSD(NextState, State, Done, Cond);
+NextStateDecoder NSD(NextState, State, Done, Cond. Moc);
 ControlSignalsEncoder CSE(CM1, CM0, SM1, SM0, Ld, First, Last, State, Done);
 StateReg Register(State, NextState, Reset, Clk);
 
@@ -399,7 +399,7 @@ endmodule
 
 module CU_tester;
 
-    reg Done, Reset, Clk, Cond;
+    reg Done, Reset, Clk, Cond, Moc;
     wire[5:0] State;
     wire CM0, CM1, SM1, SM0, Ld, First, Last;
 
