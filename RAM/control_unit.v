@@ -1559,6 +1559,11 @@ module StateReg(output reg[5:0]State,
     
 endmodule
 
+module mux_4_1(input [3:0]a , input [3:0]b, input [3:0]c, input [3:0]d,input sel1, input sel2, output[3:0] out  );
+
+    assign out = sel2 ? (sel1 ? d : c) : (sel1 ? b: a);
+
+endmodule
 
 module CU_tester;
 
@@ -1610,11 +1615,11 @@ module CU_tester;
 
     reg DS_IR;//del IR
     reg Ds; //Del MDR
-    mux muxA(IR_16_19, IR_15_12, all_on, dont_care, MA1, MA0, A);
-    mux muxB(PB, O, Qs_MDR, dont_care, MB1, MB0, B);
-    mux muxC( IR_15_12, all_on, MC, C);
-    mux muxD(OP_4_0, IR_24_21, MD, OP);
-    mux muxE( DS_IR, PC, ME, Ds);//Ds is for MDR, missing DS_IR
+    mux_4_1 muxA(IR_16_19, IR_15_12, all_on, dont_care, MA1, MA0, A);
+    mux_4_1 muxB(PB, O, Qs_MDR, dont_care, MB1, MB0, B);
+    mux_4_1 muxC( IR_15_12, all_on, MC, C);
+    mux_4_1 muxD(OP_4_0, IR_24_21, MD, OP);
+    mux_4_1 muxE( DS_IR, PC, ME, Ds);//Ds is for MDR, missing DS_IR
 
     initial #100 $finish;
 
