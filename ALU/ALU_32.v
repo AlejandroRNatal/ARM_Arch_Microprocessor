@@ -1,5 +1,5 @@
 
-module ALU(output reg N, Z, V, Cout,  output reg  [0:31]O, input Cin , input  [0:31]A, B , input [0:3]OP);
+module ALU(output reg N, Z, V, Cout,  output reg  [31:0]O, input Cin , input  [31:0]A, B , input [4:0]OP);
 
   reg og_sign , shouldbe_sign ,ovfl_sign;
 
@@ -63,6 +63,7 @@ module ALU(output reg N, Z, V, Cout,  output reg  [0:31]O, input Cin , input  [0
     begin //sub over carry 
       {Cout , O} <= (Cin == 1) ? ({1'b0,A} - {1'b0,B} - {32'h1}) : ({1'b0,A} - {1'b0,B});
     end
+    
     
 
 

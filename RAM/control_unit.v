@@ -1,3 +1,5 @@
+`include "ALU_32.v"
+`include "RegisterFile.v"
 
 `define START 6'b000000
 `define FIRST 6'b000001
@@ -60,6 +62,13 @@ module ControlUnit(output[2:0]State, output FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,
 wire[5:0] NextState;
 //reg Cond, Moc;//This might be wrong
 
+
+/**
+
+	I think you are using moc as a state ? Im confused
+
+	Creo que tienes el done ese haciendo la misma funcion que el moc 
+**/
 NextStateDecoder NSD(NextState, State, Done, Cond. Moc);
 ControlSignalsEncoder CSE(FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_1,MB_0,MC_1,MC_0,MD, ME, OP4,OP3,OP2,OP1,OP0, State , Done);//MIGHT BE NEXTSTATE HERE NOT SURE
 StateReg Register(State, NextState, Reset, Clk);
@@ -73,60 +82,68 @@ module NextStateDecoder(output reg [5:0] NextState,
 
     case(State)
 
-        START: begin NextState = FIRST;break;end
+        START: begin NextState = FIRST;end
 
-        FIRST: begin NextState = SECOND;break;end
+        FIRST: begin NextState = SECOND;end
 
-        SECOND: begin NextState = THIRD;break;end
+        SECOND: begin NextState = THIRD;end
 
-        MOC: begin if(Done) NextState = COND;break;
-                else NextState = MOC;break;
+        MOC: begin 
+				if(Done) NextState = COND;
+                else NextState <= MOC;
              end
-        CONDITIONAL:
+        
+		CONDITIONAL:
             begin
                 if(Cond)
+				begin
                     //Distinguish between arith, store, load
                     if(IR[27:25] == 3'b010)//Load, store
-
-                        if(IR[20] = 1'b0)//load
+					begin
+                        if(IR[20] == 1'b0)//load
+						begin
                             if(IR[23] == 1'b0)// u = 0 -> suma else resta
                                 NextState = LD_IMM_PRE;//TODO FIX THIS
                             if(IR[24]== 1'b0)//p == 0 POST
                                 NestState = LD_IMM_POST;
                             else//offset
                                 NextState = LD_IMM_OFFSET;
+						end
                         else//store
-
+						begin
                             if(IR[23] == 1'b1)// u == 1 -> sum
+							begin
                                 if(IR[24] == 1'b0)//p =0 ->27
-                                    NextState = STR_IMM_POST;
-                                else if(IR[24] == 1'b0) && IR[21])// -> 28th state
-                                    NextState = STR_IMM_PRE;
-                                else //offset -> 26
-                                    NextState = STR_IMM_OFFSET;
-                
+                                    NextState <= STR_IMM_POST;
+                                else if(IR[24] == 1'b0 &&  IR[21] )// -> 28th state
+                                    NextState <= STR_IMM_PRE;
+                                else NextState = STR_IMM_OFFSET;//offset -> 26
+							end
+						end
+                    end            
+				end
                 else
                     NextState = COND;
                 
-                break;
+                
             end
 
         ARITH_OP_IMM:
             begin
                 NextState = FIRST;
-                break;
+                
             end
 
         REG_REG:
              begin
                 NextState = FIRST;
-                break;
+                
             end
 
         ARITH_OP_SHIFT:
            begin
                 NextState = FIRST;
-                break;
+                
             end
 
         LD_IMM_OFFSET:
@@ -168,17 +185,17 @@ module NextStateDecoder(output reg [5:0] NextState,
         SEVENTEENTH:
         begin
              NextState = EIGHTEENTH;
-            break;
+            
         end
 
         EIGHTEENTH:
          begin
             if(!Moc)
                 NextState = EIGHTEENTH;
-                break;
+                
             else
                 NextState = NINETEENTH;
-            break;
+            
          end
 
         NINETEENTH:
@@ -186,140 +203,144 @@ module NextStateDecoder(output reg [5:0] NextState,
 
                     if(IR[27:25] == 3'b010)//Load, store
 
-                        if(IR[20] = 1'b0)//load
+                        if(IR[20] == 1'b0)//load
+						begin
                             if(IR[23] == 1'b0)// u = 0 -> suma else resta
                                 NextState = LD_IMM_PRE;//TODO FIX THIS
                             if(IR[24]== 1'b0)//p == 0 POST
                                 NestState = LD_IMM_POST;
                             else//offset
                                 NextState = LD_IMM_OFFSET;
+						end
                         else//store
 
                             if(IR[23] == 1'b1)// u == 1 -> sum
                                 if(IR[24] == 1'b0)//p =0 ->27
                                     NextState = LD_IMM_REG_POST;
-                                else if(IR[24] == 1'b0) && IR[21])// -> 28th state
+                                else if(IR[24] == 1'b0 && IR[21])// -> 28th state
                                     NextState = LD_IMM_PRE;
                                 else //offset -> 26
                                     NextState = LD_SCALED_OFFSET;
-                break;
+                
             end
         
 
 
 
-        TWENTIETH:begin NextState = FIRST;break; end
-        TWENTY_FIRST:begin NextState = FIRST; break; end
-        TWENTY_SECOND: begin NextState = FIRST; break; end
-        TWENTY_THIRD:begin NextState =FIRST; break; end
-        TWENTY_FOURTH:begin NextState = FIRST break; end
-        TWENTY_FIFTH:begin NextState = FIRST; break; end
+        TWENTIETH:begin NextState = FIRST; end
+        TWENTY_FIRST:begin NextState = FIRST;  end
+        TWENTY_SECOND: begin NextState = FIRST;  end
+        TWENTY_THIRD:begin NextState =FIRST;  end
+        TWENTY_FOURTH:begin NextState = FIRST;  end
+        TWENTY_FIFTH:begin NextState = FIRST;  end
 
         STR_IMM_OFFSET:
         begin
             NextState = THIRTY_FIFTH;
-            break;
+            
         end
         
         STR_IMM_POST:
         begin
             NextState = THIRTY_FIFTH;
-            break;
+            
         end
         
         STR_IMM_PRE:
         begin
             NextState = THIRTY_FIFTH;
-            break;
+            
         end
 
         STR_REG_OFFSET:
         begin
             NextState = THIRTY_FIFTH;
-            break;
+            
         end
 
         STR_REG_POST:
         begin
             NextState = THIRTY_FIFTH;
-            break;
+            
         end
 
         STR_REG_PRE:
         begin
             NextState = THIRTY_FIFTH;
-            break;
+            
         end
 
         STR_SCALED_OFFSET:
         begin
             NextState = THIRTY_FIFTH;
-            break;
+            
         end
 
         STR_SCALED_POST:
         begin
             NextState = THIRTY_FIFTH;
-            break;
+            
         end
 
         STR_SCALED_PRE:
             begin
                 NextState = THIRTY_FIFTH;
-                break;
+                
             end
 
         THIRTY_FIFTH:
             begin
                  NextState = THIRTY_SIXTH;
-                 break;
+                 
             end
 
-        THIRTY_SIXTH:begin  NextState = THIRTY_SEVENTH; break;end
+        THIRTY_SIXTH:begin  NextState = THIRTY_SEVENTH; end
         
         //NEED TO ADD LOGIC HERE
         THIRTY_SEVENTH:
             begin
                   if(!Moc)
                     THIRTY_SEVENTH;
-                    break;
+                    
                   else
                     //BRANCH here
                     if(IR[27:25] == 3'b010)//Load, store
 
-                        if(IR[20] = 1'b0)//load
+                        if(IR[20] == 1'b0)//load
+						begin
                             if(IR[23] == 1'b0)// u = 0 -> suma else resta
                                 NextState = LD_IMM_PRE;//TODO FIX THIS
                             if(IR[24]== 1'b0)//p == 0 POST
                                 NestState = LD_IMM_POST;
                             else//offset
                                 NextState = LD_IMM_OFFSET;
+						end
                         else//store
 
                             if(IR[23] == 1'b1)// u == 1 -> sum
                                 if(IR[24] == 1'b0)//p =0 ->27
                                     NextState = STR_IMM_POST;
-                                else if(IR[24] == 1'b0) && IR[21])// -> 28th state
+                                else if(IR[24] == 1'b0 && IR[21])// -> 28th state
                                     NextState = STR_IMM_PRE;
                                 else //offset -> 26
                                     NextState = STR_IMM_OFFSET;
 
-                    break;
+                    
             end
 
-        THIRTY_EIGHTH:begin NextState = FIRST; break;end
-        THIRTY_NINTH:begin NextState = FIRST;break; end
+        THIRTY_EIGHTH:begin NextState = FIRST; end
+        THIRTY_NINTH:begin NextState = FIRST; end
 
-        FORTIETH:begin NextState = FIRST;break;end
-        FORTY_FIRST:begin NextState = FIRST;break;end
-        FORTY_SECOND:begin NextState = FIRST;break;end
-        FORTY_THIRD:begin NextState = FIRST;break;end
-        BRANCH:begin NextState = FIRST; break;end
-        MOV:begin NextState = FIRST;break; end
-        CMP: begin NextState = FIRST;break; end
+        FORTIETH:begin NextState = FIRST;end
+        FORTY_FIRST:begin NextState = FIRST;end
+        FORTY_SECOND:begin NextState = FIRST;end
+        FORTY_THIRD:begin NextState = FIRST;end
+        BRANCH:begin NextState = FIRST; end
+        MOV:begin NextState = FIRST; end
+        CMP: begin NextState = FIRST; end
 
 
-        default:begin  NextState = 3'b000;break; end
+        default:begin  NextState = 3'b000; end
 
     endcase
 
@@ -356,7 +377,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 				OP1 <= 0;
 				OP0 <= 1;
 			end
-                break;
+                
 
 			FIRST:
 			begin
@@ -381,7 +402,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 				OP1 <= 0.0;
 				OP0 <= 0.0;
 			end
-            break;
+            
 
 			SECOND:
 			begin
@@ -406,7 +427,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 				OP1 <= 0.0;
 				OP0 <= 1.0;
 			end
-            break;
+            
 
 			MOC:
 			begin
@@ -431,7 +452,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 				OP1 <= 0.0;
 				OP0 <= 0.0;
 			end
-            break;
+            
 
 			CONDITIONAL:
 			begin
@@ -456,7 +477,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 				OP1 <= 0.0;
 				OP0 <= 0.0;
 			end
-            break;
+            
 
 			ARITH_OP_IMM:
 			begin
@@ -481,7 +502,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 				OP1 <= 0;
 				OP0 <= 0;
 			end
-            break;
+            
 
 			REG_REG:
 			begin
@@ -506,7 +527,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 				OP1 <= 0.0;
 				OP0 <= 0.0;
 			end
-            break;
+            
 
 			ARITH_OP_SHIFT:
 			begin
@@ -531,7 +552,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 				OP1 <= 0.0;
 				OP0 <= 0.0;
 			end
-            break;
+            
 
 
 			LD_IMM_OFFSET:
@@ -557,7 +578,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 				OP1 <= 0;
 				OP0 <= 0;
 			end
-            break;
+            
 
 			LD_IMM_POST:
 			begin
@@ -582,7 +603,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 				OP1 <= 0.0;
 				OP0 <= 0.0;
 			end
-            break;
+            
 
 			LD_IMM_PRE:
 			begin
@@ -607,7 +628,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 				OP1 <= 0.0;
 				OP0 <= 0.0;
 			end
-            break;
+            
 
 			LD_IMM_REG_OFFSET:
 			begin
@@ -632,7 +653,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 				OP1 <= 0;
 				OP0 <= 0;
 			end
-            break;
+            
 
 			LD_IMM_REG_POST:
 			begin
@@ -657,7 +678,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 				OP1 <= 0.0;
 				OP0 <= 0.0;
 			end
-            break;
+            
 
 			LD_IMM_REG_PRE:
 			begin
@@ -682,7 +703,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 				OP1 <= 0.0;
 				OP0 <= 0.0;
 			end
-            break;
+            
 
 			LD_SCALED_OFFSET:
 			begin
@@ -707,7 +728,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 				OP1 <= 0;
 				OP0 <= 0;
 			end
-            break;
+            
 
 			LD_IMM_REG_POST:
 			begin
@@ -732,7 +753,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 				OP1 <= 0.0;
 				OP0 <= 0.0;
 			end
-            break;
+            
 
 			LD_SCALED_PRE:
 			begin
@@ -757,7 +778,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 				OP1 <= 0.0;
 				OP0 <= 0.0;
 			end
-            break;
+            
 
 			SEVENTEENTH:
 			begin
@@ -782,7 +803,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 				OP1 <= 0;
 				OP0 <= 0;
 			end
-            break;
+            
 
 			EIGHTEENTH:
 			begin
@@ -807,7 +828,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 				OP1 <= 0.0;
 				OP0 <= 0.0;
 			end
-            break;
+            
 
 			NINETEENTH:
 			begin
@@ -832,7 +853,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 				OP1 <= 0.0;
 				OP0 <= 1.0;
 			end
-            break;
+            
 
 			TWENTIETH:
 			begin
@@ -857,7 +878,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 				OP1 <= 0;
 				OP0 <= 0;
 			end
-            break;
+            
 
 			TWENTY_FIRST:
 			begin
@@ -882,7 +903,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 				OP1 <= 0.0;
 				OP0 <= 1.0;
 			end
-            break;
+            
 
 			TWENTY_SECOND:
 			begin
@@ -907,7 +928,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 				OP1 <= 0.0;
 				OP0 <= 1.0;
 			end
-            break;
+            
 
 			TWENTY_THIRD:
 			begin
@@ -932,7 +953,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 				OP1 <= 0.0;
 				OP0 <= 1.0;
 			end
-            break;
+            
 
 			TWENTY_FOURTH:
 			begin
@@ -957,7 +978,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 				OP1 <= 0.0;
 				OP0 <= 1.0;
 			end
-            break; 
+             
 
 			TWENTY_FIFTH:
 			begin
@@ -982,7 +1003,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 				OP1 <= 0.0;
 				OP0 <= 1.0;
 			end
-            break;
+            
 
 			STR_IMM_OFFSET:
 			begin
@@ -1007,7 +1028,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 				OP1 <= 0;
 				OP0 <= 0;
 			end
-            break;
+            
 
 			STR_IMM_POST:
 			begin
@@ -1032,7 +1053,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 				OP1 <= 0.0;
 				OP0 <= 0.0;
 			end
-            break;
+            
 
 			STR_IMM_PRE:
 			begin
@@ -1057,7 +1078,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 				OP1 <= 0.0;
 				OP0 <= 0.0;
 			end
-            break;
+            
 
 			STR_REG_OFFSET:
 			begin
@@ -1082,7 +1103,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 				OP1 <= 0;
 				OP0 <= 0;
 			end
-            break;
+            
 
 			STR_REG_POST:
 			begin
@@ -1107,7 +1128,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 				OP1 <= 0.0;
 				OP0 <= 0.0;
 			end
-            break;
+            
 
 			STR_REG_PRE:
 			begin
@@ -1132,7 +1153,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 				OP1 <= 0.0;
 				OP0 <= 0.0;
 			end
-            break;
+            
 
 			STR_SCALED_OFFSET:
 			begin
@@ -1157,7 +1178,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 				OP1 <= 0;
 				OP0 <= 0;
 			end
-            break;
+            
 
 			STR_SCALED_POST:
 			begin
@@ -1182,7 +1203,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 				OP1 <= 0.0;
 				OP0 <= 0.0;
 			end
-            break;
+            
 
 			STR_SCALED_PRE:
 			begin
@@ -1207,7 +1228,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 				OP1 <= 0.0;
 				OP0 <= 0.0;
 			end
-            break;
+            
 
 			THIRTY_FIFTH:
 			begin
@@ -1232,7 +1253,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 				OP1 <= 0;
 				OP0 <= 0;
 			end
-            break;
+            
 
 			THIRTY_SIXTH:
 			begin
@@ -1257,7 +1278,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 				OP1 <= 0.0;
 				OP0 <= 0.0;
 			end
-            break;
+            
 
 			THIRTY_SEVENTH:
 			begin
@@ -1282,7 +1303,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 				OP1 <= 0.0;
 				OP0 <= 0.0;
 			end
-            break;
+            
 
 			THIRTY_EIGHTH:
 			begin
@@ -1307,7 +1328,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 				OP1 <= 0;
 				OP0 <= 0;
 			end
-            break;
+            
 
 			THIRTY_NINTH:
 			begin
@@ -1332,7 +1353,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 				OP1 <= 0.0;
 				OP0 <= 0.0;
 			end
-            break;
+            
 
 			FORTIETH:
 			begin
@@ -1357,7 +1378,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 				OP1 <= 0.0;
 				OP0 <= 0.0;
 			end
-            break;
+            
 
 			FORTY_FIRST:
 			begin
@@ -1382,7 +1403,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 				OP1 <= 0.0;
 				OP0 <= 0.0;
 			end
-            break;
+            
 
 			FORTY_SECOND:
 			begin
@@ -1407,7 +1428,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 				OP1 <= 0.0;
 				OP0 <= 0.0;
 			end
-            break;
+            
 
 			BRANCH:
 			begin
@@ -1432,7 +1453,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 				OP1 <= 0.0;
 				OP0 <= 0.0;
 			end
-            break;
+            
 
 			MOV:
 			begin
@@ -1457,7 +1478,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 				OP1 <= 0;
 				OP0 <= 0;
 			end
-            break;
+            
 
 			CMP:
 			begin
@@ -1512,7 +1533,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
         default:
                 begin
                     CM1 = 0;
-                    CM0 = 0
+                    CM0 = 0;
                     SM1=0;
                     SM0 =0;
                     Ld=1;
@@ -1546,9 +1567,11 @@ module CU_tester;
                 decinput, A1, B2, // inputs
                 LD, Clrr, Clkk, // senales
                 A, B);
-    ALU alu(output reg N, Z, V, Cout,  output reg  [0:31]O, input Cin , input  [0:31]A, B , input [0:3]OP);
+    ALU_ alu(output reg N, Z, V, Cout,  output reg  [31:0]O, input Cin , input  [31:0]A, B , input [4:0]OP);
     
+
     reg Done, Reset, Clk, Cond, Moc;
+	
     wire[5:0] State;
     wire FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_1,MB_0,MC_1,MC_0,MD, ME, OP4,OP3,OP2,OP1,OP0;
 

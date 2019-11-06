@@ -3,7 +3,7 @@ module alutest;
     wire signed [0:31] Y; 
     wire N , V , Z , Co;
 
-    reg Ci;
+    reg Ci;`
 
     reg [0:3]OP;
     reg signed [0:31] A , B;
