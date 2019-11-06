@@ -88,7 +88,7 @@ module NextStateDecoder(output reg [5:0] NextState,
 
                         if(IR[20] = 1'b0)//load
                             if(IR[23] == 1'b0)// u = 0 -> suma else resta
-                                NextState = ;//TODO FIX THIS
+                                NextState = LD_IMM_PRE;//TODO FIX THIS
                             if(IR[24]== 1'b0)//p == 0 POST
                                 NestState = LD_IMM_POST;
                             else//offset
@@ -181,9 +181,26 @@ module NextStateDecoder(output reg [5:0] NextState,
 
         NINETEENTH:
             begin
-            //BRANCH HERE
-                 NextState = 6'b000000;
-                  break;
+
+                    if(IR[27:25] == 3'b010)//Load, store
+
+                        if(IR[20] = 1'b0)//load
+                            if(IR[23] == 1'b0)// u = 0 -> suma else resta
+                                NextState = LD_IMM_PRE;//TODO FIX THIS
+                            if(IR[24]== 1'b0)//p == 0 POST
+                                NestState = LD_IMM_POST;
+                            else//offset
+                                NextState = LD_IMM_OFFSET;
+                        else//store
+
+                            if(IR[23] == 1'b1)// u == 1 -> sum
+                                if(IR[24] == 1'b0)//p =0 ->27
+                                    NextState = LD_IMM_REG_POST;
+                                else if(IR[24] == 1'b0) && IR[21])// -> 28th state
+                                    NextState = LD_IMM_PRE;
+                                else //offset -> 26
+                                    NextState = LD_SCALED_OFFSET;
+                break;
             end
         
 
@@ -266,6 +283,25 @@ module NextStateDecoder(output reg [5:0] NextState,
                     break;
                   else
                     //BRANCH here
+                    if(IR[27:25] == 3'b010)//Load, store
+
+                        if(IR[20] = 1'b0)//load
+                            if(IR[23] == 1'b0)// u = 0 -> suma else resta
+                                NextState = LD_IMM_PRE;//TODO FIX THIS
+                            if(IR[24]== 1'b0)//p == 0 POST
+                                NestState = LD_IMM_POST;
+                            else//offset
+                                NextState = LD_IMM_OFFSET;
+                        else//store
+
+                            if(IR[23] == 1'b1)// u == 1 -> sum
+                                if(IR[24] == 1'b0)//p =0 ->27
+                                    NextState = STR_IMM_POST;
+                                else if(IR[24] == 1'b0) && IR[21])// -> 28th state
+                                    NextState = STR_IMM_PRE;
+                                else //offset -> 26
+                                    NextState = STR_IMM_OFFSET;
+
                     break;
             end
 
