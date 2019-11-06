@@ -55,14 +55,13 @@
 `define MOV 6'b101101
 `define CMP 6'b101110
 
-module ControlUnit(output[2:0]State, output CM1, CM0,SM1, SM0,
-                    Ld, First, Last, input Done, Reset, Clk);
+module ControlUnit(output[2:0]State, output FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_1,MB_0,MC_1,MC_0,MD, ME, OP4,OP3,OP2,OP1,OP0, input Moc, Cond, Done, Reset, Clk);
 
-wire[2:0] NextState;
-reg Cond, Moc;//This might be wrong
+wire[5:0] NextState;
+//reg Cond, Moc;//This might be wrong
 
 NextStateDecoder NSD(NextState, State, Done, Cond. Moc);
-ControlSignalsEncoder CSE(CM1, CM0, SM1, SM0, Ld, First, Last, State, Done);
+ControlSignalsEncoder CSE(FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_1,MB_0,MC_1,MC_0,MD, ME, OP4,OP3,OP2,OP1,OP0, State , Done);//MIGHT BE NEXTSTATE HERE NOT SURE
 StateReg Register(State, NextState, Reset, Clk);
 
 endmodule
@@ -1542,15 +1541,19 @@ module CU_tester;
 
     reg Done, Reset, Clk, Cond, Moc;
     wire[5:0] State;
-    wire CM0, CM1, SM1, SM0, Ld, First, Last;
+    wire FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_1,MB_0,MC_1,MC_0,MD, ME, OP4,OP3,OP2,OP1,OP0;
 
-    ControlUnit CU (State, CM1, CM0, SM1, SM0, Ld, First, Last, Done, Reset, Clk);
+    ControlUnit CU (State, FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_1,MB_0,MC_1,MC_0,MD, ME, OP4,OP3,OP2,OP1,OP0, Moc, Cond, Done, Reset, Clk);
     
     initial #100 $finish;
 
     initial begin
         Clk = 1'b0;
+        Cond =1'b0;
+        Moc = 1'b0;
         repeat(100) #5 Clk = ~Clk;
+        repeat(100) #5 Moc = ~Moc;
+        repeat(100) #5 Cond = ~Cond;
     end
 
     initial fork
@@ -1565,9 +1568,9 @@ module CU_tester;
     join
 
         initial begin
-            $display("State CM1 CM0 SM1 SM0 Ld First Last Done Reset     Time");
-            $monitor("%d  %b %b %b %b %b %b %b %b %b %d",
-                    State, CM1, CM0, SM1, SM0, Ld, First, Last, Done, Reset, $time);
+            $display("State FR RF IR MDR MAR R_W MOV MA_1 MA_0 MB_1 MB_0 MC_1 MC_0 MD ME OP4 OP3 OP2 OP1 OP0 Moc, Cond Done Reset     Time");
+            $monitor("%d  %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %d",
+                    State, FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_1,MB_0,MC_1,MC_0,MD, ME, OP4,OP3,OP2,OP1,OP0, Moc, Cond, Done, Reset, $time);
         end
 
 endmodule
