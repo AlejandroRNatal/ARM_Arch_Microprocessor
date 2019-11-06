@@ -57,7 +57,7 @@
 `define MOV 6'b101101
 `define CMP 6'b101110
 
-module ControlUnit(output[2:0]State, output FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_1,MB_0,MC_1,MC_0,MD, ME, OP4,OP3,OP2,OP1,OP0,
+module ControlUnit(output[5:0]State, output FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_1,MB_0,MC_1,MC_0,MD, ME, OP4,OP3,OP2,OP1,OP0,
                      input Moc, Cond, Done, Reset, Clk);
 
 wire[5:0] NextState;
@@ -1559,8 +1559,13 @@ module StateReg(output reg[5:0]State,
     
 endmodule
 
+module mux_4_1(input [3:0]a , input [3:0]b, input [3:0]c, input [3:0]d,input sel1, input sel2, output[3:0] out  );
 
-module CU_tester;
+    assign out = sel2 ? (sel1 ? d : c) : (sel1 ? b: a);
+
+endmodule
+
+module CU_tester_with_ALU_and_REG;
 
 
     reg Done, Reset, Clk, Cond, Moc, RF_Ld;
@@ -1572,15 +1577,15 @@ module CU_tester;
              OP4,OP3,OP2,OP1,OP0;
 
     wire N, Z, V , Cout;
-    wire[31:0] O;
+    wire[31:0] O;//Sign extender & shifter bits
     reg[0:31] A;
     reg[0:31] B;
     reg[0:3] OP;
     reg Cin;
 
     reg [31:0]PC;
-    reg [3:0] A;
-    reg [3:0] B;
+    reg [3:0] R_A;
+    reg [3:0] R_B;
 
     wire [31:0]PA;
     wire [31:0]PB;
@@ -1593,7 +1598,7 @@ module CU_tester;
     reg[3:0] dont_care = 4b'0000;
 
     regfile reg_file(PC, 
-                        C,A,B,
+                        C,R_A,R_B,
                         RF_Ld, Reset, Clk, 
                         PA, PB);
 
@@ -1601,15 +1606,20 @@ module CU_tester;
 
 
 
-    ControlUnit CU (State, FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_1,MB_0,MC_1,MC_0,MD, ME, OP4,OP3,OP2,OP1,OP0, Moc, Cond, Done, Reset, Clk);
+    ControlUnit CU (State,
+                     FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_1,MB_0,MC_1,MC_0,MD, ME, OP4,OP3,OP2,OP1,OP0,
+                     Moc, Cond, Done, Reset, Clk);
     
 
     //NO SE COMO HACER ESTO
-    mux muxA(IR_16_19, IR_15_12, all_on, dont_care, MA1, MA0, A);
-    mux muxB(PB, O, Qs_MDR, dont_care, MB1, MB0, B);
-    mux muxC( IR_15_12, all_on, MC, C);
-    mux muxD(OP_4_0, IR_24_21, MD, OP);
-    mux muxE( DS_IR, PC, ME, Ds);//Ds is for MDR, missing DS_IR
+
+    reg DS_IR;//del IR
+    reg Ds; //Del MDR
+    mux_4_1 muxA(IR_16_19, IR_15_12, all_on, dont_care, MA1, MA0, A);
+    mux_4_1 muxB(PB, O, Qs_MDR, dont_care, MB1, MB0, B);
+    mux_4_1 muxC( IR_15_12, all_on, MC, C);
+    mux_4_1 muxD(OP_4_0, IR_24_21, MD, OP);
+    mux_4_1 muxE( DS_IR, PC, ME, Ds);//Ds is for MDR, missing DS_IR
 
     initial #100 $finish;
 
@@ -1648,4 +1658,47 @@ module CU_tester;
 
 
 
+endmodule
+
+module CU_tester;
+    wire[5:0] State;
+    wire FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_1,MB_0,MC_1,MC_0,MD, ME, OP4,OP3,OP2,OP1,OP0;
+    reg Moc, Clk, Reset, Done, Cond;
+
+    ControlUnit cu(State, FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_1,MB_0,MC_1,MC_0,MD, ME, OP4,OP3,OP2,OP1,OP0,Moc, Cond,Done, Reset, Clk);
+
+    initial begin
+        State = 6'b000000;
+        Clk = 1'b0;
+        Cond =1'b0;
+        Moc = 1'b0;
+        //repeat(100) #5 State += 6'b000001;
+        repeat(100) #5 Clk = ~Clk;
+        repeat(100) #5 Moc = ~Moc;
+        repeat(100) #5 Cond = ~Cond;
+    end
+
+    initial fork
+        Reset = 1'b0;
+        #3 Reset = 1'b1;
+        #80 Reset = 1'b0;
+        #83 Reset = 1'b1;
+
+        Done = 1'b0;
+        #50 Done = 1'b1;
+        #60 Done = 1'b0;
+    join
+
+        initial begin
+            $display("===Control-Unit===\n");
+            Sdisplay("---Input---\n")
+            $display("FR | RF | IR | MDR | MAR | R_W | MOV | MA_1 | MA_0 | MB_1 | MB_0 | MC_1 | MC_0| MD | ME | OP4 | OP3 | OP2 | OP1 | OP0 | Time\n");
+            $monitor("%b | %b | %b | %b  | %b  | %b  | %b  |  %b  |  %b  |  %b  |  %b  | %b   |  %b | %b | %b | %b  | %b  | %b  | %b  |  %b |  %d",
+                     FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_1,MB_0,MC_1,MC_0,MD, ME, OP4,OP3,OP2,OP1,OP0, Moc, Cond, Done, Reset, $time);
+            $display("---Ouput---\n");
+            $display("State | Moc | Cond | Done | Reset| Time\n");
+
+            $monitor("%d  | %b | %b | %b | %b |  %d",
+                    State  Moc Cond Done Reset $time);
+        end
 endmodule
