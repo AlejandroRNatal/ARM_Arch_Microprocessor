@@ -1,12 +1,12 @@
-`include "ALU_32.v"
+`include "ALU/ALU_32.v"
 module alutest;
     wire signed [0:31] Y; 
     wire N , V , Z , Co;
 
-    reg Ci;`
+    reg Ci;
 
-    reg [0:3]OP;
-    reg signed [0:31] A , B;
+    reg [4:0]OP;
+    reg signed [31:0] A , B;
 
     parameter sim_time  = 1000;
 
