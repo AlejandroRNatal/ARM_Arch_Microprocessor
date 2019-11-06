@@ -1683,8 +1683,8 @@ module CU_tester;
     ControlUnit cu(State, FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_1,MB_0,MC_1,MC_0,MD, ME, OP4,OP3,OP2,OP1,OP0,Moc, Cond,Done, Reset, Clk);
 
     initial begin
-        State = `START;
-        IR = `DEFAULT_IR;
+       // State <= START;
+       // IR = DEFAULT_IR;
         Clk = 1'b0;
         Cond =1'b0;
         Moc = 1'b0;
