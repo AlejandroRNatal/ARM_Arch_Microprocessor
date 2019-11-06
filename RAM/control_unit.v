@@ -1539,6 +1539,15 @@ endmodule
 
 module CU_tester;
 
+    wire N, Z, V , Cout;
+    wire[31:0] O;
+
+    regfile reg_file(C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15, C16, //Port C
+                decinput, A1, B2, // inputs
+                LD, Clrr, Clkk, // senales
+                A, B);
+    ALU alu(output reg N, Z, V, Cout,  output reg  [0:31]O, input Cin , input  [0:31]A, B , input [0:3]OP);
+    
     reg Done, Reset, Clk, Cond, Moc;
     wire[5:0] State;
     wire FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_1,MB_0,MC_1,MC_0,MD, ME, OP4,OP3,OP2,OP1,OP0;
@@ -1568,9 +1577,23 @@ module CU_tester;
     join
 
         initial begin
+            $display("===Control-Unit===\n");
             $display("State FR RF IR MDR MAR R_W MOV MA_1 MA_0 MB_1 MB_0 MC_1 MC_0 MD ME OP4 OP3 OP2 OP1 OP0 Moc, Cond Done Reset     Time");
             $monitor("%d  %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %d",
                     State, FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_1,MB_0,MC_1,MC_0,MD, ME, OP4,OP3,OP2,OP1,OP0, Moc, Cond, Done, Reset, $time);
         end
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 endmodule
