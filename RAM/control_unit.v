@@ -1,6 +1,6 @@
-`include "ALU/ALU_32.v"
-`include "RegisterFile.v"
-
+// `include "/ALU/ALU_32.v"
+// `include "/RegisterFile.v"
+`define DEFAULT_IR 32'b0000000000000000000000000000
 `define START 6'b000000
 `define FIRST 6'b000001
 `define SECOND 6'b000010
@@ -57,10 +57,11 @@
 `define MOV 6'b101101
 `define CMP 6'b101110
 
-module ControlUnit(output[5:0]State, output FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_1,MB_0,MC_1,MC_0,MD, ME, OP4,OP3,OP2,OP1,OP0,
+module ControlUnit(output[5:0]State, output FR,RF,output [31:0]IR,output MDR,MAR,R_W,MOV,MA_1,MA_0,MB_1,MB_0,MC_1,MC_0,MD, ME, OP4,OP3,OP2,OP1,OP0,
                      input Moc, Cond, Done, Reset, Clk);
 
 wire[5:0] NextState;
+
 //reg Cond, Moc;//This might be wrong
 
 
@@ -70,7 +71,7 @@ wire[5:0] NextState;
 
 	Creo que tienes el done ese haciendo la misma funcion que el moc 
 **/
-NextStateDecoder NSD(NextState, State, Done, Cond. Moc);
+NextStateDecoder NSD(NextState, State, IR ,Done, Cond, Moc);
 ControlSignalsEncoder CSE(FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_1,MB_0,MC_1,MC_0,MD, ME, OP4,OP3,OP2,OP1,OP0, State , Done);//MIGHT BE NEXTSTATE HERE NOT SURE
 StateReg Register(State, NextState, Reset, Clk);
 
@@ -83,18 +84,18 @@ module NextStateDecoder(output reg [5:0] NextState,
 
     case(State)
 
-        START: begin NextState = FIRST;end
+        `START: begin NextState = `FIRST;end
 
-        FIRST: begin NextState = SECOND;end
+        `FIRST: begin NextState = `SECOND;end
 
-        SECOND: begin NextState = THIRD;end
+        `SECOND: begin NextState = `MOC;end
 
-        MOC: begin 
-				if(Done) NextState = COND;
-                else NextState <= MOC;
+        `MOC: begin 
+				if(Done) NextState = `CONDITIONAL;
+                else NextState <= `MOC;
              end
         
-		CONDITIONAL:
+		`CONDITIONAL:
             begin
                 if(Cond)
 				begin
@@ -104,102 +105,102 @@ module NextStateDecoder(output reg [5:0] NextState,
                         if(IR[20] == 1'b0)//load
 						begin
                             if(IR[23] == 1'b0)// u = 0 -> suma else resta
-                                NextState = LD_IMM_PRE;//TODO FIX THIS
+                                NextState = `LD_IMM_PRE;//TODO FIX THIS
                             if(IR[24]== 1'b0)//p == 0 POST
-                                NestState = LD_IMM_POST;
+                                NextState = `LD_IMM_POST;
                             else//offset
-                                NextState = LD_IMM_OFFSET;
+                                NextState = `LD_IMM_OFFSET;
 						end
                         else//store
 						begin
                             if(IR[23] == 1'b1)// u == 1 -> sum
 							begin
                                 if(IR[24] == 1'b0)//p =0 ->27
-                                    NextState <= STR_IMM_POST;
+                                    NextState <= `STR_IMM_POST;
                                 else if(IR[24] == 1'b0 &&  IR[21] )// -> 28th state
-                                    NextState <= STR_IMM_PRE;
-                                else NextState = STR_IMM_OFFSET;//offset -> 26
+                                    NextState <= `STR_IMM_PRE;
+                                else NextState = `STR_IMM_OFFSET;//offset -> 26
 							end
 						end
                     end            
 				end
                 else
-                    NextState = COND;
+                    NextState <= `CONDITIONAL;
                 
                 
             end
 
-        ARITH_OP_IMM:
+        `ARITH_OP_IMM:
             begin
-                NextState = FIRST;
+                NextState = `FIRST;
                 
             end
 
-        REG_REG:
+        `REG_REG:
              begin
-                NextState = FIRST;
+                NextState = `FIRST;
                 
             end
 
-        ARITH_OP_SHIFT:
+        `ARITH_OP_SHIFT:
            begin
-                NextState = FIRST;
+                NextState = `FIRST;
                 
             end
 
-        LD_IMM_OFFSET:
+        `LD_IMM_OFFSET:
             begin
-             NextState = SEVENTEENTH;
+             NextState = `SEVENTEENTH;
              end
 
-        LD_IMM_POST:
+        `LD_IMM_POST:
             begin
-               NextState = SEVENTEENTH;
+               NextState = `SEVENTEENTH;
             end
 
-        LD_IMM_PRE:
+        `LD_IMM_PRE:
             begin
-             NextState = SEVENTEENTH;
+             NextState = `SEVENTEENTH;
             end
-        LD_IMM_REG_OFFSET:  begin
-             NextState = SEVENTEENTH;
+        `LD_IMM_REG_OFFSET:  begin
+             NextState = `SEVENTEENTH;
             end
-        LD_IMM_REG_POST:   begin
-             NextState = SEVENTEENTH;
+        `LD_IMM_REG_POST:   begin
+             NextState = `SEVENTEENTH;
             end
-        LD_IMM_REG_PRE:
+        `LD_IMM_REG_PRE:
           begin
-             NextState = SEVENTEENTH;
+             NextState = `SEVENTEENTH;
             end
-        LD_SCALED_OFFSET:
+        `LD_SCALED_OFFSET:
           begin
-             NextState = SEVENTEENTH;
+             NextState = `SEVENTEENTH;
             end
-        LD_SCALED_POST:
+        `LD_SCALED_POST:
           begin
-             NextState = SEVENTEENTH;
+             NextState = `SEVENTEENTH;
             end
-        LD_SCALED_PRE:  begin
-             NextState = SEVENTEENTH;
+        `LD_SCALED_PRE:  begin
+             NextState = `SEVENTEENTH;
             end
 
-        SEVENTEENTH:
+        `SEVENTEENTH:
         begin
-             NextState = EIGHTEENTH;
+             NextState = `EIGHTEENTH;
             
         end
 
-        EIGHTEENTH:
+        `EIGHTEENTH:
          begin
             if(!Moc)
-                NextState = EIGHTEENTH;
+                NextState = `EIGHTEENTH;
                 
             else
-                NextState = NINETEENTH;
+                NextState = `NINETEENTH;
             
          end
 
-        NINETEENTH:
+        `NINETEENTH:
             begin
 
                     if(IR[27:25] == 3'b010)//Load, store
@@ -207,101 +208,101 @@ module NextStateDecoder(output reg [5:0] NextState,
                         if(IR[20] == 1'b0)//load
 						begin
                             if(IR[23] == 1'b0)// u = 0 -> suma else resta
-                                NextState = LD_IMM_PRE;//TODO FIX THIS
+                                NextState = `LD_IMM_PRE;//TODO FIX THIS
                             if(IR[24]== 1'b0)//p == 0 POST
-                                NestState = LD_IMM_POST;
+                                NextState = `LD_IMM_POST;
                             else//offset
-                                NextState = LD_IMM_OFFSET;
+                                NextState = `LD_IMM_OFFSET;
 						end
                         else//store
 
                             if(IR[23] == 1'b1)// u == 1 -> sum
                                 if(IR[24] == 1'b0)//p =0 ->27
-                                    NextState = LD_IMM_REG_POST;
+                                    NextState = `LD_IMM_REG_POST;
                                 else if(IR[24] == 1'b0 && IR[21])// -> 28th state
-                                    NextState = LD_IMM_PRE;
+                                    NextState = `LD_IMM_PRE;
                                 else //offset -> 26
-                                    NextState = LD_SCALED_OFFSET;
+                                    NextState = `LD_SCALED_OFFSET;
                 
             end
         
 
 
 
-        TWENTIETH:begin NextState = FIRST; end
-        TWENTY_FIRST:begin NextState = FIRST;  end
-        TWENTY_SECOND: begin NextState = FIRST;  end
-        TWENTY_THIRD:begin NextState =FIRST;  end
-        TWENTY_FOURTH:begin NextState = FIRST;  end
-        TWENTY_FIFTH:begin NextState = FIRST;  end
+        `TWENTIETH:begin NextState = `FIRST; end
+        `TWENTY_FIRST:begin NextState = `FIRST;  end
+        `TWENTY_SECOND: begin NextState = `FIRST;  end
+        `TWENTY_THIRD:begin NextState = `FIRST;  end
+        `TWENTY_FOURTH:begin NextState = `FIRST;  end
+        `TWENTY_FIFTH:begin NextState = `FIRST;  end
 
-        STR_IMM_OFFSET:
+        `STR_IMM_OFFSET:
         begin
-            NextState = THIRTY_FIFTH;
+            NextState = `THIRTY_FIFTH;
             
         end
         
-        STR_IMM_POST:
+        `STR_IMM_POST:
         begin
-            NextState = THIRTY_FIFTH;
+            NextState = `THIRTY_FIFTH;
             
         end
         
-        STR_IMM_PRE:
+        `STR_IMM_PRE:
         begin
-            NextState = THIRTY_FIFTH;
+            NextState = `THIRTY_FIFTH;
             
         end
 
-        STR_REG_OFFSET:
+        `STR_REG_OFFSET:
         begin
-            NextState = THIRTY_FIFTH;
+            NextState = `THIRTY_FIFTH;
             
         end
 
-        STR_REG_POST:
+        `STR_REG_POST:
         begin
-            NextState = THIRTY_FIFTH;
+            NextState = `THIRTY_FIFTH;
             
         end
 
-        STR_REG_PRE:
+        `STR_REG_PRE:
         begin
-            NextState = THIRTY_FIFTH;
+            NextState = `THIRTY_FIFTH;
             
         end
 
-        STR_SCALED_OFFSET:
+        `STR_SCALED_OFFSET:
         begin
-            NextState = THIRTY_FIFTH;
+            NextState = `THIRTY_FIFTH;
             
         end
 
-        STR_SCALED_POST:
+        `STR_SCALED_POST:
         begin
-            NextState = THIRTY_FIFTH;
+            NextState = `THIRTY_FIFTH;
             
         end
 
-        STR_SCALED_PRE:
+        `STR_SCALED_PRE:
             begin
-                NextState = THIRTY_FIFTH;
+                NextState = `THIRTY_FIFTH;
                 
             end
 
-        THIRTY_FIFTH:
+        `THIRTY_FIFTH:
             begin
-                 NextState = THIRTY_SIXTH;
+                 NextState = `THIRTY_SIXTH;
                  
             end
 
-        THIRTY_SIXTH:begin  NextState = THIRTY_SEVENTH; end
+        `THIRTY_SIXTH:begin  NextState = `THIRTY_SEVENTH; end
         
         //NEED TO ADD LOGIC HERE
-        THIRTY_SEVENTH:
+        `THIRTY_SEVENTH:
             begin
                   if(!Moc)
-                    THIRTY_SEVENTH;
+                    NextState <= `THIRTY_SEVENTH;
                     
                   else
                     //BRANCH here
@@ -310,35 +311,35 @@ module NextStateDecoder(output reg [5:0] NextState,
                         if(IR[20] == 1'b0)//load
 						begin
                             if(IR[23] == 1'b0)// u = 0 -> suma else resta
-                                NextState = LD_IMM_PRE;//TODO FIX THIS
+                                NextState = `LD_IMM_PRE;//TODO FIX THIS
                             if(IR[24]== 1'b0)//p == 0 POST
-                                NestState = LD_IMM_POST;
+                                NextState = `LD_IMM_POST;
                             else//offset
-                                NextState = LD_IMM_OFFSET;
+                                NextState = `LD_IMM_OFFSET;
 						end
                         else//store
 
                             if(IR[23] == 1'b1)// u == 1 -> sum
                                 if(IR[24] == 1'b0)//p =0 ->27
-                                    NextState = STR_IMM_POST;
+                                    NextState = `STR_IMM_POST;
                                 else if(IR[24] == 1'b0 && IR[21])// -> 28th state
-                                    NextState = STR_IMM_PRE;
+                                    NextState = `STR_IMM_PRE;
                                 else //offset -> 26
-                                    NextState = STR_IMM_OFFSET;
+                                    NextState = `STR_IMM_OFFSET;
 
                     
             end
 
-        THIRTY_EIGHTH:begin NextState = FIRST; end
-        THIRTY_NINTH:begin NextState = FIRST; end
+        `THIRTY_EIGHTH:begin NextState = `FIRST; end
+        `THIRTY_NINTH:begin NextState = `FIRST; end
 
-        FORTIETH:begin NextState = FIRST;end
-        FORTY_FIRST:begin NextState = FIRST;end
-        FORTY_SECOND:begin NextState = FIRST;end
-        FORTY_THIRD:begin NextState = FIRST;end
-        BRANCH:begin NextState = FIRST; end
-        MOV:begin NextState = FIRST; end
-        CMP: begin NextState = FIRST; end
+        `FORTIETH:begin NextState = `FIRST;end
+        `FORTY_FIRST:begin NextState = `FIRST;end
+        `FORTY_SECOND:begin NextState = `FIRST;end
+        `FORTY_THIRD:begin NextState = `FIRST;end
+        `BRANCH:begin NextState = `FIRST; end
+        `MOV:begin NextState = `FIRST; end
+        `CMP: begin NextState = `FIRST; end
 
 
         default:begin  NextState = 3'b000; end
@@ -348,14 +349,14 @@ module NextStateDecoder(output reg [5:0] NextState,
 endmodule
 
 
-module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_1,MB_0,MC_1,MC_0,MD, ME, OP4,OP3,OP2,OP1,OP0,
+module ControlSignalsEncoder( output reg FR_ld,RF_ld,output reg[31:0]IR_ld, output reg MDR_ld,MAR_ld,R_W,MOV,MA1,MA0,MB1,MB0,MC1,MC0,MD, ME, OP4,OP3,OP2,OP1,OP0,
         input [5:0]State, input Done);
 
     always@(State, Done)
 
     case(State)
 
-			START:
+			`START:
 			begin
 				FR_ld <= 0;
 				RF_ld <= 1;
@@ -380,7 +381,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 			end
                 
 
-			FIRST:
+			`FIRST:
 			begin
 				FR_ld <= 0.0;
 				RF_ld <= 0.0;
@@ -396,7 +397,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 				MC1 <= 0.0;
 				MC0 <= 0.0;
 				MD <= 1.0;
-				ME <= nan;
+				ME <= 0;
 				OP4 <= 1.0;
 				OP3 <= 0.0;
 				OP2 <= 0.0;
@@ -405,7 +406,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 			end
             
 
-			SECOND:
+			`SECOND:
 			begin
 				FR_ld <= 0.0;
 				RF_ld <= 1.0;
@@ -430,7 +431,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 			end
             
 
-			MOC:
+			`MOC:
 			begin
 				FR_ld <= 0.0;
 				RF_ld <= 0.0;
@@ -455,7 +456,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 			end
             
 
-			CONDITIONAL:
+			`CONDITIONAL:
 			begin
 				FR_ld <= 0.0;
 				RF_ld <= 0.0;
@@ -480,7 +481,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 			end
             
 
-			ARITH_OP_IMM:
+			`ARITH_OP_IMM:
 			begin
 				FR_ld <= 0;
 				RF_ld <= 1;
@@ -505,7 +506,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 			end
             
 
-			REG_REG:
+			`REG_REG:
 			begin
 				FR_ld <= 0.0;
 				RF_ld <= 1.0;
@@ -530,7 +531,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 			end
             
 
-			ARITH_OP_SHIFT:
+			`ARITH_OP_SHIFT:
 			begin
 				FR_ld <= 0.0;
 				RF_ld <= 1.0;
@@ -556,7 +557,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
             
 
 
-			LD_IMM_OFFSET:
+			`LD_IMM_OFFSET:
 			begin
 				FR_ld <= 0;
 				RF_ld <= 0;
@@ -581,7 +582,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 			end
             
 
-			LD_IMM_POST:
+			`LD_IMM_POST:
 			begin
 				FR_ld <= 0.0;
 				RF_ld <= 0.0;
@@ -606,7 +607,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 			end
             
 
-			LD_IMM_PRE:
+			`LD_IMM_PRE:
 			begin
 				FR_ld <= 0.0;
 				RF_ld <= 0.0;
@@ -631,7 +632,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 			end
             
 
-			LD_IMM_REG_OFFSET:
+			`LD_IMM_REG_OFFSET:
 			begin
 				FR_ld <= 0;
 				RF_ld <= 0;
@@ -656,7 +657,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 			end
             
 
-			LD_IMM_REG_POST:
+			`LD_IMM_REG_POST:
 			begin
 				FR_ld <= 0.0;
 				RF_ld <= 0.0;
@@ -681,7 +682,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 			end
             
 
-			LD_IMM_REG_PRE:
+			`LD_IMM_REG_PRE:
 			begin
 				FR_ld <= 0.0;
 				RF_ld <= 0.0;
@@ -706,7 +707,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 			end
             
 
-			LD_SCALED_OFFSET:
+			`LD_SCALED_OFFSET:
 			begin
 				FR_ld <= 0;
 				RF_ld <= 0;
@@ -731,7 +732,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 			end
             
 
-			LD_IMM_REG_POST:
+			`LD_IMM_REG_POST:
 			begin
 				FR_ld <= 0.0;
 				RF_ld <= 0.0;
@@ -756,7 +757,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 			end
             
 
-			LD_SCALED_PRE:
+			`LD_SCALED_PRE:
 			begin
 				FR_ld <= 0.0;
 				RF_ld <= 0.0;
@@ -781,7 +782,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 			end
             
 
-			SEVENTEENTH:
+			`SEVENTEENTH:
 			begin
 				FR_ld <= 0;
 				RF_ld <= 0;
@@ -806,7 +807,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 			end
             
 
-			EIGHTEENTH:
+			`EIGHTEENTH:
 			begin
 				FR_ld <= 0.0;
 				RF_ld <= 0.0;
@@ -831,7 +832,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 			end
             
 
-			NINETEENTH:
+			`NINETEENTH:
 			begin
 				FR_ld <= 0.0;
 				RF_ld <= 0.0;
@@ -856,7 +857,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 			end
             
 
-			TWENTIETH:
+			`TWENTIETH:
 			begin
 				FR_ld <= 0;
 				RF_ld <= 1;
@@ -881,7 +882,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 			end
             
 
-			TWENTY_FIRST:
+			`TWENTY_FIRST:
 			begin
 				FR_ld <= 0.0;
 				RF_ld <= 1.0;
@@ -906,7 +907,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 			end
             
 
-			TWENTY_SECOND:
+			`TWENTY_SECOND:
 			begin
 				FR_ld <= 0.0;
 				RF_ld <= 1.0;
@@ -931,7 +932,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 			end
             
 
-			TWENTY_THIRD:
+			`TWENTY_THIRD:
 			begin
 				FR_ld <= 0.0;
 				RF_ld <= 1.0;
@@ -956,7 +957,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 			end
             
 
-			TWENTY_FOURTH:
+			`TWENTY_FOURTH:
 			begin
 				FR_ld <= 0.0;
 				RF_ld <= 1.0;
@@ -981,7 +982,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 			end
              
 
-			TWENTY_FIFTH:
+			`TWENTY_FIFTH:
 			begin
 				FR_ld <= 0.0;
 				RF_ld <= 1.0;
@@ -1006,7 +1007,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 			end
             
 
-			STR_IMM_OFFSET:
+			`STR_IMM_OFFSET:
 			begin
 				FR_ld <= 0;
 				RF_ld <= 0;
@@ -1031,7 +1032,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 			end
             
 
-			STR_IMM_POST:
+			`STR_IMM_POST:
 			begin
 				FR_ld <= 0.0;
 				RF_ld <= 0.0;
@@ -1056,7 +1057,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 			end
             
 
-			STR_IMM_PRE:
+			`STR_IMM_PRE:
 			begin
 				FR_ld <= 0.0;
 				RF_ld <= 0.0;
@@ -1081,7 +1082,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 			end
             
 
-			STR_REG_OFFSET:
+			`STR_REG_OFFSET:
 			begin
 				FR_ld <= 0;
 				RF_ld <= 0;
@@ -1106,7 +1107,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 			end
             
 
-			STR_REG_POST:
+			`STR_REG_POST:
 			begin
 				FR_ld <= 0.0;
 				RF_ld <= 0.0;
@@ -1131,7 +1132,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 			end
             
 
-			STR_REG_PRE:
+			`STR_REG_PRE:
 			begin
 				FR_ld <= 0.0;
 				RF_ld <= 0.0;
@@ -1156,7 +1157,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 			end
             
 
-			STR_SCALED_OFFSET:
+			`STR_SCALED_OFFSET:
 			begin
 				FR_ld <= 0;
 				RF_ld <= 0;
@@ -1181,7 +1182,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 			end
             
 
-			STR_SCALED_POST:
+			`STR_SCALED_POST:
 			begin
 				FR_ld <= 0.0;
 				RF_ld <= 0.0;
@@ -1206,7 +1207,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 			end
             
 
-			STR_SCALED_PRE:
+			`STR_SCALED_PRE:
 			begin
 				FR_ld <= 0.0;
 				RF_ld <= 0.0;
@@ -1231,7 +1232,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 			end
             
 
-			THIRTY_FIFTH:
+			`THIRTY_FIFTH:
 			begin
 				FR_ld <= 0;
 				RF_ld <= 0;
@@ -1256,7 +1257,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 			end
             
 
-			THIRTY_SIXTH:
+			`THIRTY_SIXTH:
 			begin
 				FR_ld <= 0.0;
 				RF_ld <= 0.0;
@@ -1281,7 +1282,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 			end
             
 
-			THIRTY_SEVENTH:
+			`THIRTY_SEVENTH:
 			begin
 				FR_ld <= 0.0;
 				RF_ld <= 0.0;
@@ -1306,7 +1307,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 			end
             
 
-			THIRTY_EIGHTH:
+			`THIRTY_EIGHTH:
 			begin
 				FR_ld <= 0;
 				RF_ld <= 1;
@@ -1331,7 +1332,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 			end
             
 
-			THIRTY_NINTH:
+			`THIRTY_NINTH:
 			begin
 				FR_ld <= 0.0;
 				RF_ld <= 1.0;
@@ -1356,7 +1357,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 			end
             
 
-			FORTIETH:
+			`FORTIETH:
 			begin
 				FR_ld <= 0.0;
 				RF_ld <= 1.0;
@@ -1381,7 +1382,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 			end
             
 
-			FORTY_FIRST:
+			`FORTY_FIRST:
 			begin
 				FR_ld <= 0.0;
 				RF_ld <= 1.0;
@@ -1406,7 +1407,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 			end
             
 
-			FORTY_SECOND:
+			`FORTY_SECOND:
 			begin
 				FR_ld <= 0.0;
 				RF_ld <= 1.0;
@@ -1431,7 +1432,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 			end
             
 
-			BRANCH:
+			`BRANCH:
 			begin
 				FR_ld <= 0.0;
 				RF_ld <= 1.0;
@@ -1456,7 +1457,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 			end
             
 
-			MOV:
+			`MOV:
 			begin
 				FR_ld <= 0;
 				RF_ld <= 1;
@@ -1481,7 +1482,7 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 			end
             
 
-			CMP:
+			`CMP:
 			begin
 				FR_ld <= 0;
 				RF_ld <= 1;
@@ -1533,13 +1534,26 @@ module ControlSignalsEncoder( output reg FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_
 
         default:
                 begin
-                    CM1 = 0;
-                    CM0 = 0;
-                    SM1=0;
-                    SM0 =0;
-                    Ld=1;
-                    First = 0;
-                    Last = 0;
+                FR_ld <= 0;
+				RF_ld <= 0;
+				IR_ld <= 0;
+				MAR_ld <= 0;
+				MDR_ld <= 0;
+				R_W <= 0;
+				MOV <= 0;
+				MA1 <= 0;
+				MA0 <= 0;
+				MB1 <= 0;
+				MB0 <= 0;
+				MC1 <= 0;
+				MC0 <= 0;
+				MD <= 0;
+				ME <= 0;
+				OP4 <= 0;
+				OP3 <= 0;
+				OP2 <= 0;
+				OP1 <= 0;
+				OP0 <= 0;
                 end
     endcase
 
@@ -1565,110 +1579,112 @@ module mux_4_1(input [3:0]a , input [3:0]b, input [3:0]c, input [3:0]d,input sel
 
 endmodule
 
-module CU_tester_with_ALU_and_REG;
+// module CU_tester_with_ALU_and_REG;
 
 
-    reg Done, Reset, Clk, Cond, Moc, RF_Ld;
+//     reg Done, Reset, Clk, Cond, Moc, RF_Ld;
 	
-    wire[5:0] State;
-    wire FR,RF,IR, MDR,MAR,R_W,MOV,
-            MA_1,MA_0,MB_1,MB_0,
-            MC_1,MC_0,MD, ME,
-             OP4,OP3,OP2,OP1,OP0;
+//     wire[5:0] State;
+//     wire FR,RF,IR, MDR,MAR,R_W,MOV,
+//             MA_1,MA_0,MB_1,MB_0,
+//             MC_1,MC_0,MD, ME,
+//              OP4,OP3,OP2,OP1,OP0;
 
-    wire N, Z, V , Cout;
-    wire[31:0] O;//Sign extender & shifter bits
-    reg[0:31] A;
-    reg[0:31] B;
-    reg[0:3] OP;
-    reg Cin;
+//     wire N, Z, V , Cout;
+//     wire[31:0] O;//Sign extender & shifter bits
+//     reg[0:31] A;
+//     reg[0:31] B;
+//     reg[0:3] OP;
+//     reg Cin;
 
-    reg [31:0]PC;
-    reg [3:0] R_A;
-    reg [3:0] R_B;
+//     reg [31:0]PC;
+//     reg [3:0] R_A;
+//     reg [3:0] R_B;
 
-    wire [31:0]PA;
-    wire [31:0]PB;
+//     wire [31:0]PA;
+//     wire [31:0]PB;
 
-    reg [3:0] IR_16_19;
-    reg [3:0] IR_15_12;
-    reg [3:0] IR_24_21;
+//     reg [3:0] IR_16_19;
+//     reg [3:0] IR_15_12;
+//     reg [3:0] IR_24_21;
 
-    reg[3:0] all_on = 4b'1111;
-    reg[3:0] dont_care = 4b'0000;
+//     reg[3:0] all_on = 4b'1111;
+//     reg[3:0] dont_care = 4b'0000;
 
-    regfile reg_file(PC, 
-                        C,R_A,R_B,
-                        RF_Ld, Reset, Clk, 
-                        PA, PB);
+//     regfile reg_file(PC, 
+//                         C,R_A,R_B,
+//                         RF_Ld, Reset, Clk, 
+//                         PA, PB);
 
-    ALU alu( N, Z, V, Cout, O, Cin ,PA, B , OP);
+//     ALU alu( N, Z, V, Cout, O, Cin ,PA, B , OP);
 
 
 
-    ControlUnit CU (State,
-                     FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_1,MB_0,MC_1,MC_0,MD, ME, OP4,OP3,OP2,OP1,OP0,
-                     Moc, Cond, Done, Reset, Clk);
+//     ControlUnit CU (State,
+//                      FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_1,MB_0,MC_1,MC_0,MD, ME, OP4,OP3,OP2,OP1,OP0,
+//                      Moc, Cond, Done, Reset, Clk);
     
 
-    //NO SE COMO HACER ESTO
+//     //NO SE COMO HACER ESTO
 
-    reg DS_IR;//del IR
-    reg Ds; //Del MDR
-    mux_4_1 muxA(IR_16_19, IR_15_12, all_on, dont_care, MA1, MA0, A);
-    mux_4_1 muxB(PB, O, Qs_MDR, dont_care, MB1, MB0, B);
-    mux_4_1 muxC( IR_15_12, all_on, MC, C);
-    mux_4_1 muxD(OP_4_0, IR_24_21, MD, OP);
-    mux_4_1 muxE( DS_IR, PC, ME, Ds);//Ds is for MDR, missing DS_IR
+//     reg DS_IR;//del IR
+//     reg Ds; //Del MDR
+//     mux_4_1 muxA(IR_16_19, IR_15_12, all_on, dont_care, MA1, MA0, A);
+//     mux_4_1 muxB(PB, O, Qs_MDR, dont_care, MB1, MB0, B);
+//     mux_4_1 muxC( IR_15_12, all_on, MC, C);
+//     mux_4_1 muxD(OP_4_0, IR_24_21, MD, OP);
+//     mux_4_1 muxE( DS_IR, PC, ME, Ds);//Ds is for MDR, missing DS_IR
 
-    initial #100 $finish;
+//     initial #100 $finish;
 
-    initial begin
-        State = 6'b000000;
-        Clk = 1'b0;
-        Cond =1'b0;
-        Moc = 1'b0;
-        repeat(100) #5 State += 6'b000001;
-        repeat(100) #5 Clk = ~Clk;
-        repeat(100) #5 Moc = ~Moc;
-        repeat(100) #5 Cond = ~Cond;
-    end
+//     initial begin
+//         State = 6'b000000;
+//         Clk = 1'b0;
+//         Cond =1'b0;
+//         Moc = 1'b0;
+//         repeat(100) #5 State += 6'b000001;
+//         repeat(100) #5 Clk = ~Clk;
+//         repeat(100) #5 Moc = ~Moc;
+//         repeat(100) #5 Cond = ~Cond;
+//     end
 
-    initial fork
-        Reset = 1'b0;
-        #3 Reset = 1'b1;
-        #80 Reset = 1'b0;
-        #83 Reset = 1'b1;
+//     initial fork
+//         Reset = 1'b0;
+//         #3 Reset = 1'b1;
+//         #80 Reset = 1'b0;
+//         #83 Reset = 1'b1;
 
-        Done = 1'b0;
-        #50 Done = 1'b1;
-        #60 Done = 1'b0;
-    join
+//         Done = 1'b0;
+//         #50 Done = 1'b1;
+//         #60 Done = 1'b0;
+//     join
 
-        initial begin
-            $display("===Control-Unit===\n");
-            $display("State FR RF IR MDR MAR R_W MOV MA_1 MA_0 MB_1 MB_0 MC_1 MC_0 MD ME OP4 OP3 OP2 OP1 OP0 Moc, Cond Done Reset     Time");
-            $monitor("%d  %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %d",
-                    State, FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_1,MB_0,MC_1,MC_0,MD, ME, OP4,OP3,OP2,OP1,OP0, Moc, Cond, Done, Reset, $time);
-            $display("=== Ouput===\n");
-            $monitor("%d  %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %d",
-                    State, FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_1,MB_0,MC_1,MC_0,MD, ME, OP4,OP3,OP2,OP1,OP0, Moc, Cond, Done, Reset, $time);
-        end
+//         initial begin
+//             $display("===Control-Unit===\n");
+//             $display("State FR RF IR MDR MAR R_W MOV MA_1 MA_0 MB_1 MB_0 MC_1 MC_0 MD ME OP4 OP3 OP2 OP1 OP0 Moc, Cond Done Reset     Time");
+//             $monitor("%d  %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %d",
+//                     State, FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_1,MB_0,MC_1,MC_0,MD, ME, OP4,OP3,OP2,OP1,OP0, Moc, Cond, Done, Reset, $time);
+//             $display("=== Ouput===\n");
+//             $monitor("%d  %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %d",
+//                     State, FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_1,MB_0,MC_1,MC_0,MD, ME, OP4,OP3,OP2,OP1,OP0, Moc, Cond, Done, Reset, $time);
+//         end
     
 
 
 
-endmodule
+// endmodule
 
 module CU_tester;
     wire[5:0] State;
-    wire FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_1,MB_0,MC_1,MC_0,MD, ME, OP4,OP3,OP2,OP1,OP0;
+    wire[31:0] IR;
+    wire FR,RF, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_1,MB_0,MC_1,MC_0,MD, ME, OP4,OP3,OP2,OP1,OP0;
     reg Moc, Clk, Reset, Done, Cond;
 
     ControlUnit cu(State, FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_1,MB_0,MC_1,MC_0,MD, ME, OP4,OP3,OP2,OP1,OP0,Moc, Cond,Done, Reset, Clk);
 
     initial begin
-        State = 6'b000000;
+        State = `START;
+        IR = `DEFAULT_IR;
         Clk = 1'b0;
         Cond =1'b0;
         Moc = 1'b0;
@@ -1691,7 +1707,7 @@ module CU_tester;
 
         initial begin
             $display("===Control-Unit===\n");
-            Sdisplay("---Input---\n")
+            $display("---Input---\n");
             $display("FR | RF | IR | MDR | MAR | R_W | MOV | MA_1 | MA_0 | MB_1 | MB_0 | MC_1 | MC_0| MD | ME | OP4 | OP3 | OP2 | OP1 | OP0 | Time\n");
             $monitor("%b | %b | %b | %b  | %b  | %b  | %b  |  %b  |  %b  |  %b  |  %b  | %b   |  %b | %b | %b | %b  | %b  | %b  | %b  |  %b |  %d",
                      FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_1,MB_0,MC_1,MC_0,MD, ME, OP4,OP3,OP2,OP1,OP0, Moc, Cond, Done, Reset, $time);
@@ -1699,6 +1715,6 @@ module CU_tester;
             $display("State | Moc | Cond | Done | Reset| Time\n");
 
             $monitor("%d  | %b | %b | %b | %b |  %d",
-                    State  Moc Cond Done Reset $time);
+                    State , Moc, Cond, Done , Reset, $time);
         end
 endmodule
