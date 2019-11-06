@@ -1572,15 +1572,15 @@ module CU_tester;
              OP4,OP3,OP2,OP1,OP0;
 
     wire N, Z, V , Cout;
-    wire[31:0] O;
+    wire[31:0] O;//Sign extender & shifter bits
     reg[0:31] A;
     reg[0:31] B;
     reg[0:3] OP;
     reg Cin;
 
     reg [31:0]PC;
-    reg [3:0] A;
-    reg [3:0] B;
+    reg [3:0] R_A;
+    reg [3:0] R_B;
 
     wire [31:0]PA;
     wire [31:0]PB;
@@ -1593,7 +1593,7 @@ module CU_tester;
     reg[3:0] dont_care = 4b'0000;
 
     regfile reg_file(PC, 
-                        C,A,B,
+                        C,R_A,R_B,
                         RF_Ld, Reset, Clk, 
                         PA, PB);
 
@@ -1601,7 +1601,9 @@ module CU_tester;
 
 
 
-    ControlUnit CU (State, FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_1,MB_0,MC_1,MC_0,MD, ME, OP4,OP3,OP2,OP1,OP0, Moc, Cond, Done, Reset, Clk);
+    ControlUnit CU (State,
+                     FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_1,MB_0,MC_1,MC_0,MD, ME, OP4,OP3,OP2,OP1,OP0,
+                     Moc, Cond, Done, Reset, Clk);
     
 
     //NO SE COMO HACER ESTO
