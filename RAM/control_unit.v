@@ -1,4 +1,4 @@
-`include "ALU_32.v"
+`include "ALU/ALU_32.v"
 `include "RegisterFile.v"
 
 `define START 6'b000000
