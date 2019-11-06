@@ -1566,7 +1566,10 @@ module CU_tester;
     reg Done, Reset, Clk, Cond, Moc, RF_Ld;
 	
     wire[5:0] State;
-    wire FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_1,MB_0,MC_1,MC_0,MD, ME, OP4,OP3,OP2,OP1,OP0;
+    wire FR,RF,IR, MDR,MAR,R_W,MOV,
+            MA_1,MA_0,MB_1,MB_0,
+            MC_1,MC_0,MD, ME,
+             OP4,OP3,OP2,OP1,OP0;
 
     wire N, Z, V , Cout;
     wire[31:0] O;
@@ -1584,6 +1587,8 @@ module CU_tester;
 
     reg [3:0] IR_16_19;
     reg [3:0] IR_15_12;
+    reg [3:0] IR_24_21;
+
     reg[3:0] all_on = 4b'1111;
     reg[3:0] dont_care = 4b'0000;
 
@@ -1599,9 +1604,13 @@ module CU_tester;
     ControlUnit CU (State, FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_1,MB_0,MC_1,MC_0,MD, ME, OP4,OP3,OP2,OP1,OP0, Moc, Cond, Done, Reset, Clk);
     
 
-
+    //NO SE COMO HACER ESTO
     mux muxA(IR_16_19, IR_15_12, all_on, dont_care, MA1, MA0, A);
     mux muxB(PB, O, Qs_MDR, dont_care, MB1, MB0, B);
+    mux muxC( IR_15_12, all_on, MC, C);
+    mux muxD(OP_4_0, IR_24_21, MD, OP);
+    mux muxE( DS_IR, PC, ME, Ds);//Ds is for MDR, missing DS_IR
+
     initial #100 $finish;
 
     initial begin
