@@ -1607,6 +1607,9 @@ module CU_tester;
     
 
     //NO SE COMO HACER ESTO
+
+    reg DS_IR;//del IR
+    reg Ds; //Del MDR
     mux muxA(IR_16_19, IR_15_12, all_on, dont_care, MA1, MA0, A);
     mux muxB(PB, O, Qs_MDR, dont_care, MB1, MB0, B);
     mux muxC( IR_15_12, all_on, MC, C);
