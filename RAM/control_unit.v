@@ -65,7 +65,7 @@ StateReg Register(State, NextState, Reset, Clk);
 endmodule
 
 module NextStateDecoder(output reg [5:0] NextState,
-                         input[5:0] State, input[31:0] IR, input Done, Cond);
+                         input[5:0] State, input[31:0] IR, input Done, Cond ,Moc);
 
     always@(State, Done)
 
@@ -82,49 +82,61 @@ module NextStateDecoder(output reg [5:0] NextState,
              end
         CONDITIONAL:
             begin
-             if(Cond)
-                //Distinguish between arith, store, load
-                if(IR[27:25] == 3'b010)//Load, store
+                if(Cond)
+                    //Distinguish between arith, store, load
+                    if(IR[27:25] == 3'b010)//Load, store
 
-                    if(IR[20] = 1'b0)//load
-                        if(IR[23] == 1'b0)// u = 0 -> suma else resta
-                        if(IR[24]== 1'b0)//p == 0 POST
-                        else//offset
-                    else//store
+                        if(IR[20] = 1'b0)//load
+                            if(IR[23] == 1'b0)// u = 0 -> suma else resta
+                                NextState = ;//TODO FIX THIS
+                            if(IR[24]== 1'b0)//p == 0 POST
+                                NestState = LD_IMM_POST;
+                            else//offset
+                                NextState = LD_IMM_OFFSET;
+                        else//store
 
-                        if(IR[23] == 1'b1)// u == 1 -> sum
-                            if(IR[24] == 1'b0)//p =0 ->27
-                            else if(IR[24] == 1'b0) && IR[21])// -> 28th state
-                            else //offset -> 26
-                case(IR)
-                 NextState = COND;
-                 endcase
-                 break;
-                else NextState = COND;break;
+                            if(IR[23] == 1'b1)// u == 1 -> sum
+                                if(IR[24] == 1'b0)//p =0 ->27
+                                    NextState = STR_IMM_POST;
+                                else if(IR[24] == 1'b0) && IR[21])// -> 28th state
+                                    NextState = STR_IMM_PRE;
+                                else //offset -> 26
+                                    NextState = STR_IMM_OFFSET;
+                
+                else
+                    NextState = COND;
+                
+                break;
             end
+
         ARITH_OP_IMM:
             begin
                 NextState = FIRST;
                 break;
             end
+
         REG_REG:
              begin
                 NextState = FIRST;
                 break;
             end
+
         ARITH_OP_SHIFT:
            begin
                 NextState = FIRST;
                 break;
             end
+
         LD_IMM_OFFSET:
             begin
              NextState = SEVENTEENTH;
              end
+
         LD_IMM_POST:
             begin
                NextState = SEVENTEENTH;
             end
+
         LD_IMM_PRE:
             begin
              NextState = SEVENTEENTH;
@@ -159,11 +171,23 @@ module NextStateDecoder(output reg [5:0] NextState,
 
         EIGHTEENTH:
          begin
-             NextState = 6'b000000;
-              break;
+            if(!Moc)
+                NextState = EIGHTEENTH;
+                break;
+            else
+                NextState = NINETEENTH;
+            break;
          end
 
-        NINETEENTH: begin NextState = 6'b000000; break; end
+        NINETEENTH:
+            begin
+            //BRANCH HERE
+                 NextState = 6'b000000;
+                  break;
+            end
+        
+
+
 
         TWENTIETH:begin NextState = FIRST;break; end
         TWENTY_FIRST:begin NextState = FIRST; break; end
@@ -235,8 +259,15 @@ module NextStateDecoder(output reg [5:0] NextState,
         THIRTY_SIXTH:begin  NextState = THIRTY_SEVENTH; break;end
         
         //NEED TO ADD LOGIC HERE
-        THIRTY_SEVENTH:begin  if(!MOC)THIRTY_SEVENTH;break; end
-
+        THIRTY_SEVENTH:
+            begin
+                  if(!Moc)
+                    THIRTY_SEVENTH;
+                    break;
+                  else
+                    //BRANCH here
+                    break;
+            end
 
         THIRTY_EIGHTH:begin NextState = FIRST; break;end
         THIRTY_NINTH:begin NextState = FIRST;break; end
