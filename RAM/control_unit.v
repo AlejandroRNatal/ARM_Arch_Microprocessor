@@ -57,10 +57,10 @@
 `define MOV 6'b101101
 `define CMP 6'b101110
 
-module ControlUnit(output[5:0]State, output FR,RF,output [31:0]IR,output MDR,MAR,R_W,MOV,MA_1,MA_0,MB_1,MB_0,MC_1,MC_0,MD, ME, OP4,OP3,OP2,OP1,OP0,
-                     input Moc, Cond, Done, Reset, Clk);
+module ControlUnit(output FR,RF,output[31:0]IR,output MDR,MAR,R_W,MOV,MA_1,MA_0,MB_1,MB_0,MC_1,MC_0,MD, ME, OP4,OP3,OP2,OP1,OP0,
+                     input Moc, Cond, Reset, Clk);
 
-wire[5:0] NextState;
+
 
 //reg Cond, Moc;//This might be wrong
 
@@ -71,9 +71,6 @@ wire[5:0] NextState;
 
 	Creo que tienes el done ese haciendo la misma funcion que el moc 
 **/
-NextStateDecoder NSD(NextState, State, IR ,Done, Cond, Moc);
-ControlSignalsEncoder CSE(FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_1,MB_0,MC_1,MC_0,MD, ME, OP4,OP3,OP2,OP1,OP0, State , Done);//MIGHT BE NEXTSTATE HERE NOT SURE
-StateReg Register(State, NextState, Reset, Clk);
 
 endmodule
 
@@ -84,14 +81,14 @@ module NextStateDecoder(output reg [5:0] NextState,
 
     case(State)
 
-        `START: begin NextState = `FIRST;end
+        `START: begin NextState = `FIRST;end  
 
         `FIRST: begin NextState = `SECOND;end
 
         `SECOND: begin NextState = `MOC;end
 
         `MOC: begin 
-				if(Done) NextState = `CONDITIONAL;
+				if( Moc) NextState = `CONDITIONAL;
                 else NextState <= `MOC;
              end
         
@@ -100,16 +97,18 @@ module NextStateDecoder(output reg [5:0] NextState,
                 if(Cond)
 				begin
                     //Distinguish between arith, store, load
-                    if(IR[27:25] == 3'b010)//Load, store
+                    if(IR[27:25] == 3'b010)//Load, store imm offset 
 					begin
-                        if(IR[20] == 1'b0)//load
+                        if(IR[20] == 1'b1)//load
 						begin
-                            if(IR[23] == 1'b0)// u = 0 -> suma else resta
-                                NextState = `LD_IMM_PRE;//TODO FIX THIS
-                            if(IR[24]== 1'b0)//p == 0 POST
-                                NextState = `LD_IMM_POST;
-                            else//offset
-                                NextState = `LD_IMM_OFFSET;
+                            if(IR[23] == 1'b1)// u = 1 -> suma else resta
+								begin
+									NextState = `LD_IMM_PRE;
+								if(IR[24]== 1'b0)//p == 0 POST
+									NextState = `LD_IMM_POST;
+								else//offset
+									NextState = `LD_IMM_OFFSET;
+								end
 						end
                         else//store
 						begin
@@ -1674,6 +1673,7 @@ endmodule
 
 // endmodule
 
+
 module CU_tester;
     wire[5:0] State;
     wire[31:0] IR;
@@ -1686,12 +1686,12 @@ module CU_tester;
        // State <= START;
        // IR = DEFAULT_IR;
         Clk = 1'b0;
-        Cond =1'b0;
-        Moc = 1'b0;
+        Cond =1'b1;
+        Moc = 1'b1;
         //repeat(100) #5 State += 6'b000001;
         repeat(100) #5 Clk = ~Clk;
-        repeat(100) #5 Moc = ~Moc;
-        repeat(100) #5 Cond = ~Cond;
+        //repeat(100) #5 Moc = ~Moc;
+        // repeat(100) #5 Cond = ~Cond;
     end
 
     initial fork
@@ -1712,9 +1712,10 @@ module CU_tester;
             $monitor("%b | %b | %b | %b  | %b  | %b  | %b  |  %b  |  %b  |  %b  |  %b  | %b   |  %b | %b | %b | %b  | %b  | %b  | %b  |  %b |  %d",
                      FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_1,MB_0,MC_1,MC_0,MD, ME, OP4,OP3,OP2,OP1,OP0, Moc, Cond, Done, Reset, $time);
             $display("---Ouput---\n");
-            $display("State | Moc | Cond | Done | Reset| Time\n");
+            // $display("State | Moc | Cond | Done | Reset| Time\n");
 
-            $monitor("%d  | %b | %b | %b | %b |  %d",
-                    State , Moc, Cond, Done , Reset, $time);
+            // $monitor("%d  | %b | %b | %b | %b |  %d",
+            //         State , Moc, Cond, Done , Reset, $time);
         end
 endmodule
+
