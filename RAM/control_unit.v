@@ -1,6 +1,6 @@
 // `include "/ALU/ALU_32.v"
 // `include "/RegisterFile.v"
-`define DEFAULT_IR 32'b0000000000000000000000000000
+`define DEFAULT_IR 32'b11100010000000010000000000000000
 `define START 6'b000000
 `define FIRST 6'b000001
 `define SECOND 6'b000010
@@ -57,12 +57,19 @@
 `define MOV 6'b101101
 `define CMP 6'b101110
 
-module ControlUnit(output FR,RF,output[31:0]IR,output MDR,MAR,R_W,MOV,MA_1,MA_0,MB_1,MB_0,MC_1,MC_0,MD, ME, OP4,OP3,OP2,OP1,OP0,
-                     input Moc, Cond, Reset, Clk);
+module ControlUnit(output FR,RF,input[31:0]IR,output MDR,MAR,R_W,MOV,MA_1,MA_0,MB_1,MB_0,MC_1,MC_0,MD, ME, OP4,OP3,OP2,OP1,OP0,
+                     input Moc, Cond, Reset, Clk , output[5:0] CS);
+
+	wire[5:0] NS , CS;
+
+	NextStateDecoder NSD( NS , CS , IR , Cond , Moc);
+	ControlSignalsEncoder SE( FR , RF , IR , MDR , MAR , R_W , MOV , MA_1 , MA_0 , MB_1 , MB_0 , MC_1 , MC_0 , MD , ME , OP4 , OP3 , OP2 , OP1 , OP0 , CS  );
+	StateReg SR(CS , NS , Clr , Clk);
+	
+
+endmodule
 
 
-
-//reg Cond, Moc;//This might be wrong
 
 
 /**
@@ -72,12 +79,12 @@ module ControlUnit(output FR,RF,output[31:0]IR,output MDR,MAR,R_W,MOV,MA_1,MA_0,
 	Creo que tienes el done ese haciendo la misma funcion que el moc 
 **/
 
-endmodule
+
 
 module NextStateDecoder(output reg [5:0] NextState,
-                         input[5:0] State, input[31:0] IR, input Done, Cond ,Moc);
+                         input[5:0] State, input[31:0] IR, input Cond ,Moc);
 
-    always@(State, Done)
+    always@*
 
     case(State)
 
@@ -94,10 +101,12 @@ module NextStateDecoder(output reg [5:0] NextState,
         
 		`CONDITIONAL:
             begin
+				$display("cond");
                 if(Cond)
 				begin
                     //Distinguish between arith, store, load
                     if(IR[27:25] == 3'b010)//Load, store imm offset 
+					$display("Load , store , imm");
 					begin
                         if(IR[20] == 1'b1)//load
 						begin
@@ -112,6 +121,7 @@ module NextStateDecoder(output reg [5:0] NextState,
 						end
                         else//store
 						begin
+							$display("Load , store , imm");
                             if(IR[23] == 1'b1)// u == 1 -> sum
 							begin
                                 if(IR[24] == 1'b0)//p =0 ->27
@@ -341,7 +351,7 @@ module NextStateDecoder(output reg [5:0] NextState,
         `CMP: begin NextState = `FIRST; end
 
 
-        default:begin  NextState = 3'b000; end
+        default:begin  NextState = 5'b1; end
 
     endcase
 
@@ -349,9 +359,9 @@ endmodule
 
 
 module ControlSignalsEncoder( output reg FR_ld,RF_ld,output reg[31:0]IR_ld, output reg MDR_ld,MAR_ld,R_W,MOV,MA1,MA0,MB1,MB0,MC1,MC0,MD, ME, OP4,OP3,OP2,OP1,OP0,
-        input [5:0]State, input Done);
+        input [5:0]State);
 
-    always@(State, Done)
+    always@*
 
     case(State)
 
@@ -1572,11 +1582,11 @@ module StateReg(output reg[5:0]State,
     
 endmodule
 
-module mux_4_1(input [3:0]a , input [3:0]b, input [3:0]c, input [3:0]d,input sel1, input sel2, output[3:0] out  );
+// module mux_4_1(input [3:0]a , input [3:0]b, input [3:0]c, input [3:0]d,input sel1, input sel2, output[3:0] out  );
 
-    assign out = sel2 ? (sel1 ? d : c) : (sel1 ? b: a);
+//     assign out = sel2 ? (sel1 ? d : c) : (sel1 ? b: a);
 
-endmodule
+// endmodule
 
 // module CU_tester_with_ALU_and_REG;
 
@@ -1634,8 +1644,7 @@ endmodule
 //     mux_4_1 muxD(OP_4_0, IR_24_21, MD, OP);
 //     mux_4_1 muxE( DS_IR, PC, ME, Ds);//Ds is for MDR, missing DS_IR
 
-//     initial #100 $finish;
-
+//     
 //     initial begin
 //         State = 6'b000000;
 //         Clk = 1'b0;
@@ -1663,7 +1672,7 @@ endmodule
 //             $display("State FR RF IR MDR MAR R_W MOV MA_1 MA_0 MB_1 MB_0 MC_1 MC_0 MD ME OP4 OP3 OP2 OP1 OP0 Moc, Cond Done Reset     Time");
 //             $monitor("%d  %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %d",
 //                     State, FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_1,MB_0,MC_1,MC_0,MD, ME, OP4,OP3,OP2,OP1,OP0, Moc, Cond, Done, Reset, $time);
-//             $display("=== Ouput===\n");
+//             $display("=== Ouput===\n")
 //             $monitor("%d  %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %b %d",
 //                     State, FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_1,MB_0,MC_1,MC_0,MD, ME, OP4,OP3,OP2,OP1,OP0, Moc, Cond, Done, Reset, $time);
 //         end
@@ -1671,51 +1680,39 @@ endmodule
 
 
 
-// endmodule
+
 
 
 module CU_tester;
-    wire[5:0] State;
-    wire[31:0] IR;
+
+    reg[31:0] IR;
     wire FR,RF, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_1,MB_0,MC_1,MC_0,MD, ME, OP4,OP3,OP2,OP1,OP0;
-    reg Moc, Clk, Reset, Done, Cond;
+	wire [5:0]State;
+    reg Moc, Clk, Reset, Cond;
+	parameter sim_time  = 1000;
 
-    ControlUnit cu(State, FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_1,MB_0,MC_1,MC_0,MD, ME, OP4,OP3,OP2,OP1,OP0,Moc, Cond,Done, Reset, Clk);
+    ControlUnit cu( FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_1,MB_0,MC_1,MC_0,MD, ME, OP4,OP3,OP2,OP1,OP0,Moc, Cond, Reset, Clk , State);
+	
 
-    initial begin
-       // State <= START;
-       // IR = DEFAULT_IR;
-        Clk = 1'b0;
-        Cond =1'b1;
-        Moc = 1'b1;
-        //repeat(100) #5 State += 6'b000001;
-        repeat(100) #5 Clk = ~Clk;
-        //repeat(100) #5 Moc = ~Moc;
-        // repeat(100) #5 Cond = ~Cond;
-    end
+	initial begin
 
-    initial fork
-        Reset = 1'b0;
-        #3 Reset = 1'b1;
-        #80 Reset = 1'b0;
-        #83 Reset = 1'b1;
 
-        Done = 1'b0;
-        #50 Done = 1'b1;
-        #60 Done = 1'b0;
-    join
+		Clk <= 1'b0;
+		Cond <= 1'b1;
+		Moc <= 1'b1;
+		IR <= `DEFAULT_IR;
 
-        initial begin
-            $display("===Control-Unit===\n");
-            $display("---Input---\n");
-            $display("FR | RF | IR | MDR | MAR | R_W | MOV | MA_1 | MA_0 | MB_1 | MB_0 | MC_1 | MC_0| MD | ME | OP4 | OP3 | OP2 | OP1 | OP0 | Time\n");
-            $monitor("%b | %b | %b | %b  | %b  | %b  | %b  |  %b  |  %b  |  %b  |  %b  | %b   |  %b | %b | %b | %b  | %b  | %b  | %b  |  %b |  %d",
-                     FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_1,MB_0,MC_1,MC_0,MD, ME, OP4,OP3,OP2,OP1,OP0, Moc, Cond, Done, Reset, $time);
-            $display("---Ouput---\n");
-            // $display("State | Moc | Cond | Done | Reset| Time\n");
+		#5
+		begin
+			
+			$display("Control Signals");
+			$display("FR  |  RF  |  IR 			 |  MDR   |  MAR  | R_W  |  MOV  | MA_1 |  MA_0  |  MB_1  |  MB_0  |  MC_1  |  MC_0  |  MD  |  ME  |  OP  |  MOC  |  COND  |  RESET  |  Clk  |   State ");
+			$monitor("%b  	|  %b  	|  %d 	 |  %b	  |  %b 	 |  %b  	|   %b  	|  %b  	|  %b  	 |  %b 	 |  %b 	 |  %b  	|  %b  	|  %b 	 |  %b  	|  %b  	|  %b 	 |  %b  	|  %b  	|  %b 	 | %d   ",FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_1,MB_0,MC_1,MC_0,MD, ME, OP1 ,Moc, Cond, Reset, Clk , State );
+			repeat(100) #5 Clk = ~Clk;
+		end
+	end
 
-            // $monitor("%d  | %b | %b | %b | %b |  %d",
-            //         State , Moc, Cond, Done , Reset, $time);
-        end
+
+
 endmodule
 

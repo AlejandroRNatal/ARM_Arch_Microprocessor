@@ -159,3 +159,4 @@ module ALU(output reg N, Z, V, Cout,  output reg  [31:0]O, input Cin , input  [3
 end
 
 endmodule
+
