@@ -57,13 +57,13 @@
 `define MOV 6'b101101
 `define CMP 6'b101110
 
-module ControlUnit(output FR,RF,input[31:0]IR,output MDR,MAR,R_W,MOV,MA_1,MA_0,MB_1,MB_0,MC_1,MC_0,MD, ME, OP4,OP3,OP2,OP1,OP0,
+module ControlUnit(output FR,RF,input[31:0]IR,output MDR,MAR,R_W,MOV,MA_1,MA_0,MB_1,MB_0,MC_1,MC_0,MD, ME, OP4,OP3,OP2,OP1,OP0,IR_ld,
                      input Moc, Cond, Reset, Clk , output[5:0] CS);
 
 	wire[5:0] NS , CS;
 
 	NextStateDecoder NSD( NS , CS , IR , Cond , Moc);
-	ControlSignalsEncoder SE( FR , RF , IR , MDR , MAR , R_W , MOV , MA_1 , MA_0 , MB_1 , MB_0 , MC_1 , MC_0 , MD , ME , OP4 , OP3 , OP2 , OP1 , OP0 , CS  );
+	ControlSignalsEncoder SE( FR , RF , IR , MDR , MAR , R_W , MOV , MA_1 , MA_0 , MB_1 , MB_0 , MC_1 , MC_0 , MD , ME , OP4 , OP3 , OP2 , OP1 , OP0 ,  IR_ld , CS  );
 	StateReg SR(CS , NS , Clr , Clk);
 	
 
@@ -84,284 +84,34 @@ endmodule
 module NextStateDecoder(output reg [5:0] NextState,
                          input[5:0] State, input[31:0] IR, input Cond ,Moc);
 
-    always@*
-	
+   always@*
 
-    case(State)
 		
-
-        `START: begin NextState = `FIRST;end  
-
-        `FIRST: begin NextState = `SECOND;end
-
-        `SECOND: begin NextState = `MOC;end
-
-        `MOC: begin 
-				if( Moc) NextState = `CONDITIONAL;
-                else NextState <= `MOC;
-             end
-        
-		`CONDITIONAL:
-            begin
+		case(State)
 				
-                if(Cond)
-				begin
-                    //Distinguish between arith, store, load
-                    if(IR[27:25] == 3'b010)//Load, store imm offset 
-					$display("Load , store , imm");
-					begin
-                        if(IR[20] == 1'b1)//load
-						begin
-                            if(IR[23] == 1'b1)// u = 1 -> suma else resta
-								begin
-									NextState = `LD_IMM_PRE;
-								if(IR[24]== 1'b0)//p == 0 POST
-									NextState = `LD_IMM_POST;
-								else//offset
-									NextState = `LD_IMM_OFFSET;
-								end
-						end
-                        else//store
-						begin
-							$display("Load , store , imm");
-                            if(IR[23] == 1'b1)// u == 1 -> sum
-							begin
-                                if(IR[24] == 1'b0)//p =0 ->27
-                                    NextState <= `STR_IMM_POST;
-                                else if(IR[24] == 1'b0 &&  IR[21] )// -> 28th state
-                                    NextState <= `STR_IMM_PRE;
-                                else NextState = `STR_IMM_OFFSET;//offset -> 26
-							end
-						end
-                    end            
-				end
-                else
-                    NextState <= `CONDITIONAL;
-                
-                
-            end
+			6'd0:
+				NextState <= 6'd1;
 
-        `ARITH_OP_IMM:
-            begin
-                NextState = `FIRST;
-                
-            end
+			6'd1:
+				NextState <= 6'd2;
+				
+			6'd2:
+				NextState <= 6'd3;
+				
+			6'd3:
+				NextState <= 6'd4;
 
-        `REG_REG:
-             begin
-                NextState = `FIRST;
-                
-            end
+			default:begin  NextState = 5'b1; end
 
-        `ARITH_OP_SHIFT:
-           begin
-                NextState = `FIRST;
-                
-            end
-
-        `LD_IMM_OFFSET:
-            begin
-             NextState = `SEVENTEENTH;
-             end
-
-        `LD_IMM_POST:
-            begin
-               NextState = `SEVENTEENTH;
-            end
-
-        `LD_IMM_PRE:
-            begin
-             NextState = `SEVENTEENTH;
-            end
-        `LD_IMM_REG_OFFSET:  begin
-             NextState = `SEVENTEENTH;
-            end
-        `LD_IMM_REG_POST:   begin
-             NextState = `SEVENTEENTH;
-            end
-        `LD_IMM_REG_PRE:
-          begin
-             NextState = `SEVENTEENTH;
-            end
-        `LD_SCALED_OFFSET:
-          begin
-             NextState = `SEVENTEENTH;
-            end
-        `LD_SCALED_POST:
-          begin
-             NextState = `SEVENTEENTH;
-            end
-        `LD_SCALED_PRE:  begin
-             NextState = `SEVENTEENTH;
-            end
-
-        `SEVENTEENTH:
-        begin
-             NextState = `EIGHTEENTH;
-            
-        end
-
-        `EIGHTEENTH:
-         begin
-            if(!Moc)
-                NextState = `EIGHTEENTH;
-                
-            else
-                NextState = `NINETEENTH;
-            
-         end
-
-        `NINETEENTH:
-            begin
-
-                    if(IR[27:25] == 3'b010)//Load, store
-
-                        if(IR[20] == 1'b0)//load
-						begin
-                            if(IR[23] == 1'b0)// u = 0 -> suma else resta
-                                NextState = `LD_IMM_PRE;//TODO FIX THIS
-                            if(IR[24]== 1'b0)//p == 0 POST
-                                NextState = `LD_IMM_POST;
-                            else//offset
-                                NextState = `LD_IMM_OFFSET;
-						end
-                        else//store
-
-                            if(IR[23] == 1'b1)// u == 1 -> sum
-                                if(IR[24] == 1'b0)//p =0 ->27
-                                    NextState = `LD_IMM_REG_POST;
-                                else if(IR[24] == 1'b0 && IR[21])// -> 28th state
-                                    NextState = `LD_IMM_PRE;
-                                else //offset -> 26
-                                    NextState = `LD_SCALED_OFFSET;
-                
-            end
-        
+		endcase
 
 
-
-        `TWENTIETH:begin NextState = `FIRST; end
-        `TWENTY_FIRST:begin NextState = `FIRST;  end
-        `TWENTY_SECOND: begin NextState = `FIRST;  end
-        `TWENTY_THIRD:begin NextState = `FIRST;  end
-        `TWENTY_FOURTH:begin NextState = `FIRST;  end
-        `TWENTY_FIFTH:begin NextState = `FIRST;  end
-
-        `STR_IMM_OFFSET:
-        begin
-            NextState = `THIRTY_FIFTH;
-            
-        end
-        
-        `STR_IMM_POST:
-        begin
-            NextState = `THIRTY_FIFTH;
-            
-        end
-        
-        `STR_IMM_PRE:
-        begin
-            NextState = `THIRTY_FIFTH;
-            
-        end
-
-        `STR_REG_OFFSET:
-        begin
-            NextState = `THIRTY_FIFTH;
-            
-        end
-
-        `STR_REG_POST:
-        begin
-            NextState = `THIRTY_FIFTH;
-            
-        end
-
-        `STR_REG_PRE:
-        begin
-            NextState = `THIRTY_FIFTH;
-            
-        end
-
-        `STR_SCALED_OFFSET:
-        begin
-            NextState = `THIRTY_FIFTH;
-            
-        end
-
-        `STR_SCALED_POST:
-        begin
-            NextState = `THIRTY_FIFTH;
-            
-        end
-
-        `STR_SCALED_PRE:
-            begin
-                NextState = `THIRTY_FIFTH;
-                
-            end
-
-        `THIRTY_FIFTH:
-            begin
-                 NextState = `THIRTY_SIXTH;
-                 
-            end
-
-        `THIRTY_SIXTH:begin  NextState = `THIRTY_SEVENTH; end
-        
-        //NEED TO ADD LOGIC HERE
-        `THIRTY_SEVENTH:
-            begin
-                  if(!Moc)
-                    NextState <= `THIRTY_SEVENTH;
-                    
-                  else
-                    //BRANCH here
-                    if(IR[27:25] == 3'b010)//Load, store
-
-                        if(IR[20] == 1'b0)//load
-						begin
-                            if(IR[23] == 1'b0)// u = 0 -> suma else resta
-                                NextState = `LD_IMM_PRE;//TODO FIX THIS
-                            if(IR[24]== 1'b0)//p == 0 POST
-                                NextState = `LD_IMM_POST;
-                            else//offset
-                                NextState = `LD_IMM_OFFSET;
-						end
-                        else//store
-
-                            if(IR[23] == 1'b1)// u == 1 -> sum
-                                if(IR[24] == 1'b0)//p =0 ->27
-                                    NextState = `STR_IMM_POST;
-                                else if(IR[24] == 1'b0 && IR[21])// -> 28th state
-                                    NextState = `STR_IMM_PRE;
-                                else //offset -> 26
-                                    NextState = `STR_IMM_OFFSET;
-
-                    
-            end
-
-        `THIRTY_EIGHTH:begin NextState = `FIRST; end
-        `THIRTY_NINTH:begin NextState = `FIRST; end
-
-        `FORTIETH:begin NextState = `FIRST;end
-        `FORTY_FIRST:begin NextState = `FIRST;end
-        `FORTY_SECOND:begin NextState = `FIRST;end
-        `FORTY_THIRD:begin NextState = `FIRST;end
-        `BRANCH:begin NextState = `FIRST; end
-        `MOV:begin NextState = `FIRST; end
-        `CMP: begin NextState = `FIRST; end
-
-
-        default:begin  NextState = 5'b1; end
-
-    endcase
 	
 endmodule
 
 
-module ControlSignalsEncoder( output reg FR_ld,RF_ld,output reg[31:0]IR_ld, output reg MDR_ld,MAR_ld,R_W,MOV,MA1,MA0,MB1,MB0,MC1,MC0,MD, ME, OP4,OP3,OP2,OP1,OP0,
-        input [5:0]State);
+module ControlSignalsEncoder( output reg FR_ld,RF_ld,output reg[31:0]IR, output reg MDR_ld,MAR_ld,R_W,MOV,MA1,MA0,MB1,MB0,MC1,MC0,MD, ME, OP4,OP3,OP2,OP1,OP0,
+       IR_ld, input [5:0]State);
 
     always@*
 
@@ -1688,18 +1438,20 @@ endmodule
 module CU_tester;
 
     reg[31:0] IR;
-    wire FR,RF, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_1,MB_0,MC_1,MC_0,MD, ME, OP4,OP3,OP2,OP1,OP0;
+    wire FR,RF, IR_ld ,MDR,MAR,R_W,MOV,MA_1,MA_0,MB_1,MB_0,MC_1,MC_0,MD, ME, OP4,OP3,OP2,OP1,OP0;
 	wire [5:0]State;
     reg Moc, Clk, Reset, Cond;
 	parameter sim_time  = 1000;
 
-    ControlUnit cu( FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_1,MB_0,MC_1,MC_0,MD, ME, OP4,OP3,OP2,OP1,OP0,Moc, Cond, Reset, Clk , State);
+    ControlUnit cu( FR,RF,IR, MDR,MAR,R_W,MOV,MA_1,MA_0,MB_1,MB_0,MC_1,MC_0,MD, ME, OP4,OP3,OP2,OP1,OP0,IR_ld , Moc, Cond, Reset, Clk , State);
 	
 
 	initial begin
 
 
 		Clk <= 1'b0;
+		Reset <= 1'b1;
+		#10 Reset <= 1'b0;
 		Cond <= 1'b1;
 		Moc <= 1'b1;
 		IR <= `DEFAULT_IR;

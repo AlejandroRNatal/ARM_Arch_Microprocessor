@@ -159,7 +159,7 @@ module ram_interact();
 
         always@(posedge enable)
         begin
-            #1 $display(" ADDRESS:%h | %h %b %b %b", address,data_output,enable, MOC,w_r);
+            #1 $display(" ADDRESS:%h | %b %b %b %b", address,data_output,enable, MOC,w_r);
         end
 
 
