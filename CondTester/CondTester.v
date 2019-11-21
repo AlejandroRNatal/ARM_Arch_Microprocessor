@@ -83,9 +83,6 @@ module ConditionTester(input  N , Z , V , C , input[3:0] Condition , output reg 
               //TODO
             end
 
-        
-
-
     endcase
 
 endmodule
