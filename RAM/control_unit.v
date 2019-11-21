@@ -85,8 +85,10 @@ module NextStateDecoder(output reg [5:0] NextState,
                          input[5:0] State, input[31:0] IR, input Cond ,Moc);
 
     always@*
+	
 
     case(State)
+		
 
         `START: begin NextState = `FIRST;end  
 
@@ -101,7 +103,7 @@ module NextStateDecoder(output reg [5:0] NextState,
         
 		`CONDITIONAL:
             begin
-				$display("cond");
+				
                 if(Cond)
 				begin
                     //Distinguish between arith, store, load
@@ -354,7 +356,7 @@ module NextStateDecoder(output reg [5:0] NextState,
         default:begin  NextState = 5'b1; end
 
     endcase
-
+	
 endmodule
 
 
