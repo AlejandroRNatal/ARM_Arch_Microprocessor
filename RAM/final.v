@@ -5,23 +5,23 @@
 `define START_ADDRESS 8'b00000000
 
 
-module ram_256_b(input [31:0]data, input [7:0]address,
-                 input w_r, input enable, input [1:0] access_mode,
-                 output reg state, output reg[31:0] mem);
+module ram_256_b(input [31:0]data_input, input [7:0]address,
+                 input w_r_mode, input enable, input [1:0] op_code,
+                 output reg MOC, output reg[31:0] mem);
     // reg [31:0] storage[0:255]; 
     reg[7:0] storage[0:511];//512 bytes
-    integer fo, file_descriptor;
+    //integer fo, file_descriptor;
 
-    always @(posedge enable, w_r)
+    always @(posedge enable, w_r_mode)
 
         begin
         //state =1'b0;
             
             if (enable)//High -> we are being requested
                 begin
-                    state = 1'b0;
-                    if(w_r)//HIGH -> read mode
-                        case(access_mode)
+                    MOC = 1'b0;
+                    if(w_r_mode)//HIGH -> read mode
+                        case(op_code)
                             `BYTE://byte
                                 begin
                                     mem[7:0] <= storage[address];
@@ -51,40 +51,40 @@ module ram_256_b(input [31:0]data, input [7:0]address,
 
                     else //write mode
                     begin
-                        case(access_mode)
+                        case(op_code)
 
                             // Byte
                             `BYTE:
                             begin
-				                 storage[address] = data[7:0];
+				                 storage[address] = data_input[7:0];
                                 //  state = 1'b1;
                                  end
 
                             // Halfword
                             `HALFWORD:
                                 begin
-                                    storage[address] = data[15:8];
-                                    storage[address + 1] = data[7:0];
+                                    storage[address] = data_input[15:8];
+                                    storage[address + 1] = data_input[7:0];
                                     //state = 1'b1;
                                 end
 
                             // Word
                             `WORD:
                                 begin
-                                    storage[address] = data[31:24];
-                                    storage[address+1] = data[23:16];
-                                    storage[address+2] = data[15:8];
-                                    storage[address+3] = data[7:0];
+                                    storage[address] = data_input[31:24];
+                                    storage[address+1] = data_input[23:16];
+                                    storage[address+2] = data_input[15:8];
+                                    storage[address+3] = data_input[7:0];
                                     //state = 1'b1;
                                 end
 
                             default: begin
-				                 storage[address] = data[7:0];
-                                 state = 1'b1;
+				                 storage[address] = data_input[7:0];
+                                 //state = 1'b1;
                             end
 
                         endcase
-                        state =1'b1;//state = 1;
+                        MOC =1'b1;//state = 1;
                     end
 
                 end
@@ -109,14 +109,15 @@ module ram_interact();
     ram_256_b ram(data, address, w_r, enable, mode, MOC,data_output);
 	
     initial begin
-		file_in = $fopen("data.txt","r");
+		file_in = $fopen("data_bin.txt","rb");
+        //file_in = $fopen("data.txt","r");
         w_r = 1'b0;
         mode = `WORD;
 		address =  9'b000000000;
 		while (!$feof(file_in)) begin
-			file_status = $fscanf(file_in, "%d", data);
+			file_status = $fscanf(file_in, "%b", data);
 			ram.storage[address] = data;
-			//$display("Memory address: %h \n Data: %h", address, data);
+			$display("Memory address: %h \n Data: %b", address, data);
 			address = address + 1;
 		end
 		$fclose(file_in);
@@ -124,7 +125,9 @@ module ram_interact();
 
 	initial begin
 		//file_out = $fopen("memory.txt", "w");
-        $display("ADDRESS\t\t|VALUE\t\t|Time\t|ENABLE\t|MOC\t|R/W");
+        $display("-------------------------------------------------------");
+        $display("\tADDRESS\t\t|\tVALUE\t\t|\tTime\t|\tENABLE\t|\tMOC\t|\tR/W");
+        $display("-------------------------------------------------------");
         mode  = `WORD;
 		enable = 1'b0; w_r = 1'b1;
 		address =  9'b000000000;
@@ -159,13 +162,13 @@ module ram_interact();
 
         always@(posedge enable)
         begin
-            #1 $display(" ADDRESS:%h | %h %b %b %b", address,data_output,enable, MOC,w_r);
+            #1 $display(" \t\t%h\t\t | %h\t |\t\t%b\t\t|\t%b\t|\t %b\t", address,data_output,enable, MOC,w_r);
         end
 
 
         initial begin
-            #40;
-            $display(" Enable MOC W/R");
+            #80;
+            #5 $display("\t\t Enable\t MOC\t W/R");
             address = 0;
             enable=0;
             enable=1;
@@ -174,9 +177,11 @@ module ram_interact();
             data_in = 8'hCC;
 
             #10;
+            $display("-------------------------------------------------------");
             $display("\n Write byte %h to ram", data_in);
-            $display("\n Value in Address %h : %h\t%b\t%b\t\t%b", address,ram.storage[address],enable,w_r,MOC);
-
+            $display("\n Address %h : %h\t%b\t%b\t\t%b", address,ram.storage[address],enable,w_r,MOC);
+            $display("-------------------------------------------------------");
+            
             address = 2;
             enable=0;
             enable=1;
@@ -185,11 +190,13 @@ module ram_interact();
             data_in = 16'hCACA;
 
             #10;
+            $display("-------------------------------------------------------");
             $display("\n Write byte %h to ram", data_in);
-            $display("\n Value in Address %h : %h\t%b\t%b\t\t%b", address,ram.storage[address],enable,w_r,MOC);
+            $display("\n Address %h : %h\t%b\t%b\t\t%b", address,ram.storage[address],enable,w_r,MOC);
             address = address + 1;
-            $display("\n Value in Address %h : %h\t%b\t%b\t\t%b", address,ram.storage[address],enable,w_r,MOC);
-        
+            $display("\n Address %h : %h\t%b\t%b\t\t%b", address,ram.storage[address],enable,w_r,MOC);
+            $display("-------------------------------------------------------");
+            
             address = 4;
             enable=0;
             enable=1;
@@ -198,10 +205,12 @@ module ram_interact();
             data_in = 16'hBABA;
 
             #10;
+            $display("-------------------------------------------------------");
             $display("\n Write byte %h to ram", data_in);
-            $display("\n Value in Address %h : %h\t%b\t%b\t\t%b", address,ram.storage[address],enable,w_r,MOC);
+            $display("\n Address %h : %h\t%b\t%b\t\t%b", address,ram.storage[address],enable,w_r,MOC);
             address = address + 1;
-            $display("\n Value in Address %h : %h\t%b\t%b\t\t%b", address,ram.storage[address],enable,w_r,MOC);            
+            $display("\n Address %h : %h\t%b\t%b\t\t%b", address,ram.storage[address],enable,w_r,MOC);            
+            $display("-------------------------------------------------------");
 
             address = 8;
             enable=0;
@@ -211,15 +220,16 @@ module ram_interact();
             data_in = 32'hCACABABA;
 
             #10;
+            $display("-------------------------------------------------------");
             $display("\n Write byte %h to ram", data_in);
-            $display("\n Value in Address %h : %h\t%b\t%b\t\t%b", address,ram.storage[address],enable,w_r,MOC);
+            $display("\n Address %h : %h\t%b\t%b\t\t%b", address,ram.storage[address],enable,w_r,MOC);
             address = address + 1;
-            $display("\n Value in Address %h : %h\t%b\t%b\t\t%b", address,ram.storage[address],enable,w_r,MOC);            
+            $display("\n Address %h : %h\t%b\t%b\t\t%b", address,ram.storage[address],enable,w_r,MOC);            
             address = address + 1;
-            $display("\n Value in Address %h : %h\t%b\t%b\t\t%b", address,ram.storage[address],enable,w_r,MOC);            
+            $display("\n Address %h : %h\t%b\t%b\t\t%b", address,ram.storage[address],enable,w_r,MOC);            
             address = address + 1;
-            $display("\n Value in Address %h : %h\t%b\t%b\t\t%b", address,ram.storage[address],enable,w_r,MOC);            
- 
+            $display("\n Address %h : %h\t%b\t%b\t\t%b", address,ram.storage[address],enable,w_r,MOC);            
+            $display("-------------------------------------------------------");
 
             $display("\n\t\t\t ENABLE\tMOC\tW/R");
             
