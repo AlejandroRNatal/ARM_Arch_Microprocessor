@@ -162,7 +162,11 @@ module ram_interact();
 
         always@(posedge enable)
         begin
+<<<<<<< HEAD
             #1 $display(" \t\t%h\t\t | %h\t |\t\t%b\t\t|\t%b\t|\t %b\t", address,data_output,enable, MOC,w_r);
+=======
+            #1 $display(" ADDRESS:%h | %b %b %b %b", address,data_output,enable, MOC,w_r);
+>>>>>>> 020cdf865b239a40cd93a98d307d029287055654
         end
 
 

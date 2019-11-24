@@ -1,4 +1,4 @@
-`include "ALU/ALU_32.v"
+
 module alutest;
     wire signed [0:31] Y; 
     wire N , V , Z , Co;
