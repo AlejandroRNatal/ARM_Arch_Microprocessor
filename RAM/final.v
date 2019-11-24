@@ -15,7 +15,6 @@ module ram_256_b(input [31:0]data_input, input [7:0]address,
     always @(posedge enable, w_r_mode)
 
         begin
-        //state =1'b0;
             
             if (enable)//High -> we are being requested
                 begin
@@ -26,7 +25,6 @@ module ram_256_b(input [31:0]data_input, input [7:0]address,
                                 begin
                                     mem[7:0] <= storage[address];
                                     mem[31:8] <= 24'h000000;
-                                    // state = 1'b1;
                                 end
                             
                             `HALFWORD://// halfword(16-bit)
@@ -34,7 +32,6 @@ module ram_256_b(input [31:0]data_input, input [7:0]address,
                                     mem[15:8] <= storage[address];
                                     mem[7:0] <= storage[address + 1];
                                     mem[31:16] <= 16'h0000;//padding the rest
-                                    // state = 1'b1;
                                 end
                           
                             `WORD:  // word (32-bit)
@@ -57,8 +54,7 @@ module ram_256_b(input [31:0]data_input, input [7:0]address,
                             `BYTE:
                             begin
 				                 storage[address] = data_input[7:0];
-                                //  state = 1'b1;
-                                 end
+                            end
 
                             // Halfword
                             `HALFWORD:
@@ -75,16 +71,14 @@ module ram_256_b(input [31:0]data_input, input [7:0]address,
                                     storage[address+1] = data_input[23:16];
                                     storage[address+2] = data_input[15:8];
                                     storage[address+3] = data_input[7:0];
-                                    //state = 1'b1;
                                 end
 
                             default: begin
 				                 storage[address] = data_input[7:0];
-                                 //state = 1'b1;
                             end
 
                         endcase
-                        MOC =1'b1;//state = 1;
+                        MOC =1'b1;
                     end
 
                 end
@@ -124,7 +118,6 @@ module ram_interact();
 	end
 
 	initial begin
-		//file_out = $fopen("memory.txt", "w");
         $display("-------------------------------------------------------");
         $display("\tADDRESS\t\t|\tVALUE\t\t|\tTime\t|\tENABLE\t|\tMOC\t|\tR/W");
         $display("-------------------------------------------------------");
@@ -162,11 +155,7 @@ module ram_interact();
 
         always@(posedge enable)
         begin
-<<<<<<< HEAD
             #1 $display(" \t\t%h\t\t | %h\t |\t\t%b\t\t|\t%b\t|\t %b\t", address,data_output,enable, MOC,w_r);
-=======
-            #1 $display(" ADDRESS:%h | %b %b %b %b", address,data_output,enable, MOC,w_r);
->>>>>>> 020cdf865b239a40cd93a98d307d029287055654
         end
 
 
